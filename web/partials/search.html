@@ -1,0 +1,55 @@
+<div class="row xtv-search-filed">
+    <div class="col-sm-offset-1 col-sm-10 text-center">
+        <h2>Total Packets: {{packetCount}}</h2>
+    </div>
+</div>
+
+<div class="row xtv-search-filed">
+    <div class="col-sm-offset-1 col-sm-10">
+        <form>
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Query" ng-model="query">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit" ng-click="search()"><span class="glyphicon glyphicon-search"></span> Search</button>
+                </span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Size</th>
+                <th>Speed</th>
+                <th>Last Mentioned</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="result in searchResults  | orderBy: 'name'">
+                <td>
+                    <div>{{result.packetId}}</div>
+                    <div><a class="xtv-download-link" ng-click="startDownload(result)"><span class="glyphicon glyphicon-download"></span></a></div>
+                </td>
+                <td>
+                   <div><strong>{{result.channel}}|{{result.bot}}</strong></div>
+                   <div>{{result.name}}</div>
+                </td>
+                <td>{{result.size}}</td>
+                <td>{{result.speed}}</td>
+                <td>{{result.date | date:'dd.MM.yyyy HH:mm'}}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row" ng-hide="searchResults && searchResults.length > 0">
+    <div class="col-sm-12">
+        No results found.
+    </div>
+</div>
