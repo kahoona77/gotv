@@ -25,7 +25,3 @@ func readJson(req *http.Request, field string, v interface{}) bool {
 
 	return true
 }
-
-func writeJson (w http.ResponseWriter) {
-	
-}

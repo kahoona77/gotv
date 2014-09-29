@@ -12,7 +12,7 @@ angular.module('xtv.controllers').
     $scope.search = function () {
       $http.get('packets/findPackets', {params : {query: $scope.query}}).success(function(response){
         if (response.status == 'ok') {
-          $scope.searchResults = response.results;
+          $scope.searchResults = response.packets;
         } else {
           msg.error (response.message);
         }

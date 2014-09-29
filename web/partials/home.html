@@ -37,8 +37,6 @@
                 <a href="#" ng-repeat="channel in selectedServer.channels  | orderBy: 'name'" class="list-group-item" ng-class="{active: channel==selectedChannel}" ng-click="selectChannel(channel)">
                     {{channel.name}}
                     <span title="delete Channel" class="glyphicon glyphicon-trash pull-right" ng-click="showDeleteChannelConfirm (channel)"></span>
-                    <span class="col-sm-3 pull-right"><strong>Packets:</strong> {{channel.packetsCount}}</span>
-                    <span class="col-sm-2 pull-right"><strong>Bots:</strong> {{channel.botsCount}}</span>
                 </a>
             </div>
         </div>
@@ -112,6 +110,3 @@
 <confirm-dialog confirm="deleteChannel()" id="deleteChannelConfirmDialog">
     Do you really want to delete the channel '{{channelToDelete.name}}'?
 </confirm-dialog>
-
-
-

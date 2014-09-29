@@ -8,7 +8,7 @@ angular.module('xtv.controllers').
     $scope.loadSettings = function () {
       $http.get('data/loadSettings').success(function (response) {
         if (response.status == 'ok') {
-          $scope.settings = response.result;
+          $scope.settings = response.settings;
 
         } else {
           msg.error(response.message);

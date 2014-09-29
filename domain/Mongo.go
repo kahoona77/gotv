@@ -3,7 +3,7 @@ package domain
 import (
   "labix.org/v2/mgo"
   "labix.org/v2/mgo/bson"
-  )
+)
 
 type GoTvRepository  struct {
   Collection *mgo.Collection
@@ -19,8 +19,20 @@ func (this GoTvRepository) All(results interface{}) error{
   return this.Collection.Find(nil).All(results)
 }
 
+func (this GoTvRepository) CountAll() (int, error){
+  return this.Collection.Find(nil).Count()
+}
+
+func (this GoTvRepository) FindWithQuery(query *bson.M, results interface{}) error{
+  return this.Collection.Find(query).All(results)
+}
+
 func (this GoTvRepository) FindById(docId string, result MongoDomain) error{
   return this.Collection.FindId(docId).One(result)
+}
+
+func (this GoTvRepository) FindFirst(result MongoDomain) error{
+  return this.Collection.Find(nil).One(result)
 }
 
 func (this GoTvRepository) Remove(docId string) error{
@@ -32,6 +44,5 @@ func (this GoTvRepository) Save(docId string,doc MongoDomain) (info *mgo.ChangeI
     docId = bson.NewObjectId().Hex()
     doc.SetId (docId)
   }
-
   return this.Collection.UpsertId(docId, doc)
 }

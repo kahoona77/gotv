@@ -8,7 +8,7 @@ angular.module('xtv.controllers').
     $scope.loadServers = function () {
       $http.get('data/loadServers').success(function(response){
         if (response.status == 'ok') {
-          $scope.servers = response.results;
+          $scope.servers = response.servers;
 
           //reselect server
           angular.forEach ($scope.servers, function (server) {
@@ -60,13 +60,12 @@ angular.module('xtv.controllers').
     };
 
     $scope.addChannel = function () {
-      var data = {
-        serverId: $scope.selectedServer.id,
-        channel: {
-          name: $scope.newChannel.name
-        }
+      var channel = {
+        name: $scope.newChannel.name
       };
-      $http.post ('data/addChannel', {data: data}).success (function (response) {
+      $scope.selectedServer.channels.push (channel);
+
+      $http.post ('data/saveServer', {data: $scope.selectedServer}).success (function (response) {
         if (response.status = 'ok') {
           $('#addChannelDialog').modal('hide');
           $scope.newChannel = undefined;
@@ -101,12 +100,10 @@ angular.module('xtv.controllers').
     };
 
     $scope.deleteChannel = function () {
-      var data = {
-        serverId: $scope.selectedServer.id,
-        channelId: $scope.channelToDelete.id
-      };
+      // remove channel from Server
+      $scope.selectedServer.channels = _.without($scope.selectedServer.channels, _.findWhere($scope.selectedServer.channels, {name: $scope.channelToDelete.name}));
 
-      $http.post ('data/deleteChannel', {data: data}).success (function (response) {
+      $http.post ('data/saveServer', {data: $scope.selectedServer}).success (function (response) {
         if (response.status = 'ok') {
           $scope.channelToDelete = undefined;
           $scope.loadServers();
