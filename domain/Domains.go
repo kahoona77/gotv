@@ -38,6 +38,19 @@ type Packet struct {
   Date      time.Time  `json:"date" bson:"date"`
 }
 
+func NewPacket(packetId string, size string, name string, bot string, channel string, server string, date time.Time) *Packet {
+  p := new(Packet)
+  p.Id        = channel + ":" + bot + ":" + packetId
+  p.PacketId  = packetId
+  p.Size      = size
+  p.Name      = name
+  p.Bot       = bot
+  p.Channel   = channel
+  p.Server    = server
+  p.Date      = date
+  return p
+}
+
 func (this *Packet) SetId(id string) {
   this.Id = id
 }

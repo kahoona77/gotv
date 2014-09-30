@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kahoona77/gotv/domain"
 	"github.com/kahoona77/gotv/handler"
+	"github.com/kahoona77/gotv/irc"
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"log"
@@ -32,9 +33,28 @@ func main() {
 	fileHandler := http.FileServer(fs)
 	r.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fileHandler))
 
+	//Repositories
 	serverRepo := domain.NewRepository(session, "servers")
-	dataHandler := handler.NewDataHandler(serverRepo)
+	settingsRepo := domain.NewRepository(session, "settings")
+	packetsRepo := domain.NewRepository(session, "packets")
+
+	//load Settings
+	var settings domain.XtvSettings
+	settingsRepo.FindFirst(&settings)
+
+	//IrcClient
+	ircClient := irc.NewClient (packetsRepo, serverRepo, &settings)
+
+	//Handlers
+	dataHandler := handler.NewDataHandler(serverRepo, settingsRepo)
 	r.PathPrefix("/data/").HandlerFunc(dataHandler.HandleRequests)
+
+	packetsHandler := handler.NewPacketsHandler(packetsRepo)
+	r.PathPrefix("/packets/").HandlerFunc(packetsHandler.HandleRequests)
+
+	ircHandler := handler.NewIrcHandler(ircClient)
+	r.PathPrefix("/irc/").HandlerFunc(ircHandler.HandleRequests)
+
 
 	log.Printf("Running on port %d\n", *port)
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)

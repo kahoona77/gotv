@@ -1,55 +1,64 @@
 package irc
 
 import (
-	irc "github.com/fluffle/goirc/client"
 	"github.com/kahoona77/gotv/domain"
-	"log"
-	"regexp"
+	"strings"
 )
 
-func Connect() {
-	// create a config and fiddle with it first:
-	cfg := irc.NewConfig("kahoona-go")
-	cfg.Server = "irc.abjects.net:6667"
-	c := irc.Client(cfg)
-
-	// Add handlers to do things here!
-	// e.g. join a channel on connect.
-	c.HandleFunc("connected",
-		func(conn *irc.Conn, line *irc.Line) {
-			log.Print("connected")
-			conn.Join("#mg-chat")
-			conn.Join("#moviegods")
-		})
-
-	c.HandleFunc("PRIVMSG", parsePacket)
-	// And a signal on disconnect
-	quit := make(chan bool)
-	c.HandleFunc("disconnected",
-		func(conn *irc.Conn, line *irc.Line) { quit <- true })
-
-	// Tell client to connect.
-	log.Print("connecting")
-	if err := c.Connect(); err != nil {
-		log.Printf("Connection error: %v\n", err)
-	}
-
-	// ... or, use ConnectTo instead.
-	if err := c.ConnectTo("irc.freenode.net"); err != nil {
-		log.Printf("Connection error: %v\n", err)
-	}
-
-	// Wait for disconnect
-	<-quit
+type IrcClient struct {
+	PacketsRepo  *domain.GoTvRepository
+	ServerRepo   *domain.GoTvRepository
+	Settings     *domain.XtvSettings
+	bots         map[string]*IrcBot
 }
 
-func parsePacket(conn *irc.Conn, line *irc.Line) {
-	r, _ := regexp.Compile(`(#[0-9]+).*\[\s*([0-9|\.]+[BbGgiKMs]+)\]\s+(.+).*`)
+func NewClient(packetsRepo *domain.GoTvRepository, serverRepo *domain.GoTvRepository, settings *domain.XtvSettings) *IrcClient {
+	client := new(IrcClient)
+	client.PacketsRepo  = packetsRepo
+	client.ServerRepo   = serverRepo
+	client.Settings     = settings
+	client.bots         = make(map[string]*IrcBot)
+	return client
+}
 
-	// matches:= r.FindAllStringSubmatch(line.Text(), -1)
-	result := r.FindStringSubmatch(line.Text())
+func (this *IrcClient) ToggleConnection (server *domain.Server) {
+	bot := this.getAndUpdateBot (server)
+	if (bot.IsConnected()){
+		bot.Disconnect ()
+		server.Status = "Not Connected"
+	} else {
+    bot.Connect()
+    server.Status = "Connected"
+  }
+  this.ServerRepo.Save(server.Id, server)
+}
 
-	packet := domain.Packet{PacketId: result[1], Size: result[2], Name: result[3], Bot: line.Nick, Channel: line.Target(), Server: "server", Date: line.Time}
 
-	log.Printf("id: %v; size: %v, name: %v, bot: %v, channel: %v, server: %v, date: %v\n", packet.PacketId, packet.Size, packet.Name, packet.Bot, packet.Channel, packet.Server, packet.Date)
+func (this *IrcClient) GetServerStatus(server *domain.Server) {
+  bot := this.getAndUpdateBot (server)
+  if (bot.IsConnected()) {
+    server.Status = "Connected"
+  } else {
+    server.Status = "Not Connected"
+  }
+	this.ServerRepo.Save(server.Id, server)
+}
+
+func (this *IrcClient) GetServerConsole(server *domain.Server) string{
+  bot := this.getAndUpdateBot (server)
+  return strings.Join (bot.ConsoleLog, "\n")
+}
+
+func (this *IrcClient) getAndUpdateBot (server *domain.Server) *IrcBot{
+	bot := this.bots[server.Name]
+	if (bot == nil) {
+		// create new bot
+		bot = NewIrcBot (this.PacketsRepo, this.Settings, server)
+		this.bots[server.Name] = bot
+	} else {
+		//update bot
+		bot.Server   = server
+		bot.Settings = this.Settings
+	}
+	return bot
 }

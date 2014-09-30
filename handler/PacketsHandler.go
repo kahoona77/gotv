@@ -35,7 +35,6 @@ func (this PacketsHandler) HandleRequests(w http.ResponseWriter, r *http.Request
 		this.findPackets(w, r)
 	case url == "/packets/countPackets":
 		this.countPackets(w, r)
-
 	}
 
 	return
@@ -43,7 +42,10 @@ func (this PacketsHandler) HandleRequests(w http.ResponseWriter, r *http.Request
 
 func (this PacketsHandler) findPackets(w http.ResponseWriter, r *http.Request) {
 	var results []domain.Packet
-	queryRegex := "simpsons"
+
+	params := r.URL.Query()
+	queryRegex := createRegexQuery(params["query"][0])
+
 	query := bson.M{"name": bson.M{"$regex": queryRegex, "$options": "i"}}
 
 
@@ -51,6 +53,11 @@ func (this PacketsHandler) findPackets(w http.ResponseWriter, r *http.Request) {
 
 	data := PacketsResult {true,"ok", results, 0}
 	json.NewEncoder(w).Encode(data)
+}
+
+func createRegexQuery (query string) string {
+    parts := strings.Split (query, " ")
+    return  strings.Join (parts, ".*")
 }
 
 
