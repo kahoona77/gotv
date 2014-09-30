@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kahoona77/gotv/domain"
 	"github.com/kahoona77/gotv/handler"
+	"github.com/kahoona77/gotv/irc"
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"log"
@@ -44,6 +45,8 @@ func main() {
 	packetsHandler := handler.NewPacketsHandler(packetsRepo)
 	r.PathPrefix("/packets/").HandlerFunc(packetsHandler.HandleRequests)
 
+	//IRC
+	irc.Connect()
 
 	log.Printf("Running on port %d\n", *port)
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
