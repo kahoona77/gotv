@@ -14,9 +14,21 @@ a {
   text-align: center;
 }
 
+.list-group-item.active {
+  border-left: solid rgb(119, 119, 119);
+}
+
+.list-group-separator.xtv-seperator-full:before {
+  width: calc(100% - 10px);
+}
+
 .xtv-server-icon {
   margin-left: 5px;
   margin-right: 5px;
+}
+
+.xtv-row-heading {
+  margin-top: 12px;
 }
 
 .xtv-search-filed {
@@ -24,9 +36,15 @@ a {
   margin-bottom: 20px;
 }
 
-.xtv-download-link {
-  color: #009200;
+.xtv-download-btn {
+  margin: 0;
+  padding: 6px;
+  font-size: 14px;
+  width: 25px;
+  height: 25px;
 }
+
+
 
 .xtv-progress {
   margin-bottom: 0;
@@ -91,6 +109,3 @@ a {
   display:block!important;
   top: -200px;
 }
-
-
-

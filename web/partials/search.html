@@ -7,12 +7,14 @@
 <div class="row xtv-search-filed">
     <div class="col-sm-offset-1 col-sm-10">
         <form>
+          <div class="form-group">
             <div class="input-group">
                 <input type="text" class="form-control" placeholder="Query" ng-model="query">
-                <span class="input-group-btn">
-                    <button class="btn btn-default" type="submit" ng-click="search()"><span class="glyphicon glyphicon-search"></span> Search</button>
+                <span class="input-group-btn" style="padding-left: 5px; bottom: 10px;">
+                    <button class="btn btn-primary btn-sm btn-material-bluegrey " type="submit" ng-click="search()"><span class="glyphicon glyphicon-search"></span> Search</button>
                 </span>
             </div>
+          </div>
         </form>
     </div>
 </div>
@@ -33,7 +35,9 @@
             <tr ng-repeat="result in searchResults  | orderBy: 'name'">
                 <td>
                     <div>{{result.packetId}}</div>
-                    <div><a class="xtv-download-link" ng-click="startDownload(result)"><span class="glyphicon glyphicon-download"></span></a></div>
+                    <div>
+                      <a ng-click="startDownload(result)" class="btn btn-success btn-fab btn-raised btn-material-lightgreen xtv-download-btn icon-material-file-download"></a>
+                    </div>
                 </td>
                 <td>
                    <div><strong>{{result.channel}}|{{result.bot}}</strong></div>

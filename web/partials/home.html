@@ -7,37 +7,54 @@
     <div class="col-sm-5">
         <div class="row">
             <div class="col-sm-12">
-                <strong>Servers</strong>
-                <div class="pull-right pointer" ng-click="showAddServerDialog()">
+                <h3 class="pull-left xtv-row-heading">Servers</h3>
+                <a class="btn btn-default btn-xs pull-right pointer" ng-click="showAddServerDialog()">
                     <span class="glyphicon glyphicon-plus"></span> Add Server
-                </div>
+                </a>
             </div>
         </div>
         <div class="row">
             <div class="col-sm-12  list-group">
-                <a href="#" ng-repeat="server in servers | orderBy: 'name'" class="list-group-item" ng-class="{active: server==selectedServer}" ng-click="selectServer(server)">
-                    <strong>{{server.name}}</strong>:{{server.port}}
-                    <span title="delete Server" class="glyphicon glyphicon-trash pull-right xtv-server-icon" ng-click="showDeleteServerConfirm (server)"></span>
-                    <span title="{{server.status}}" class="glyphicon pull-right xtv-server-icon" ng-class="getStatusClass(server)" ng-click="toggleConnection (server)"></span>
-                </a>
+              <div ng-repeat="server in servers | orderBy: 'name'">
+                <div  class="list-group-item" ng-class="{active: server==selectedServer}" ng-click="selectServer(server)">
+                    <div class="row-action-primary">
+                        <i title="{{server.status}}" class="pointer" ng-class="getStatusClass(server)" ng-click="toggleConnection (server)"></i>
+                    </div>
+                    <div class="row-content">
+                      <div class="action-secondary" >
+                        <i title="delete Server" ng-click="showDeleteServerConfirm (server)" class="icon-material-delete"></i>
+                      </div>
+                      <p class="list-group-item-heading">{{server.name}}</p>
+                      <p class="list-group-item-text">Port: {{server.port}}</p>
+                    </div>
+                </div>
+                <div class="list-group-separator"></div>
+              </div>
             </div>
         </div>
     </div>
     <div class="col-sm-7" ng-show="selectedServer">
         <div class="row">
             <div class="col-sm-12">
-                <strong>Channels ({{selectedServer.name}}):</strong>
-                <div class="pull-right pointer" ng-click="showAddChannelDialog()">
-                    <span class="glyphicon glyphicon-plus"></span> Add Channel
-                </div>
+              <h5 class="pull-left" style="margin-top:18px">Channels ({{selectedServer.name}}):</h5>
+              <a class="btn btn-default btn-xs pull-right pointer" ng-click="showAddChannelDialog()">
+                  <span class="glyphicon glyphicon-plus"></span> Add Channel
+              </a>
             </div>
         </div>
         <div class="row">
             <div class="col-sm-12 list-group">
-                <a href="#" ng-repeat="channel in selectedServer.channels  | orderBy: 'name'" class="list-group-item" ng-class="{active: channel==selectedChannel}" ng-click="selectChannel(channel)">
-                    {{channel.name}}
-                    <span title="delete Channel" class="glyphicon glyphicon-trash pull-right" ng-click="showDeleteChannelConfirm (channel)"></span>
-                </a>
+              <div ng-repeat="channel in selectedServer.channels  | orderBy: 'name'">
+                <div  class="list-group-item" ng-class="{active: channel==selectedChannel}" ng-click="selectChannel(channel)">
+                    <div class="row-content" style="min-height: 20px;">
+                      <div class="action-secondary" style="top: 0">
+                        <i title="delete Channel" ng-click="showDeleteChannelConfirm (channel)" class="icon-material-delete"></i>
+                      </div>
+                      <p class="list-group-item-text">{{channel.name}}</p>
+                    </div>
+                </div>
+                <div class="list-group-separator xtv-seperator-full"></div>
+              </div>
             </div>
         </div>
     </div>
@@ -71,7 +88,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" ng-disabled="addServerForm.$invalid" ng-click="addServer()">Add Server</button>
+                <button type="button" class="btn btn-primary btn-material-bluegrey" ng-disabled="addServerForm.$invalid" ng-click="addServer()">Add Server</button>
             </div>
         </div>
     </div>
@@ -95,7 +112,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" ng-disabled="addChannelForm.$invalid" ng-click="addChannel()">Add Channel</button>
+                <button type="button" class="btn btn-primary btn-material-bluegrey" ng-disabled="addChannelForm.$invalid" ng-click="addChannel()">Add Channel</button>
             </div>
         </div>
     </div>

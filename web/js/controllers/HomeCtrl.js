@@ -115,9 +115,9 @@ angular.module('xtv.controllers').
 
     $scope.getStatusClass = function (server) {
       if (server.status == 'Connected') {
-         return 'glyphicon-globe';
+         return 'icon-material-public';
       }
-      return 'glyphicon-ban-circle';
+      return 'icon-material-do-not-disturb';
     };
 
     $scope.toggleConnection = function (server) {
