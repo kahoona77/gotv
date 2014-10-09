@@ -62,3 +62,7 @@ func (this *IrcClient) getAndUpdateBot (server *domain.Server) *IrcBot{
 	}
 	return bot
 }
+
+func (this *IrcClient) GetBot (serverName string) *IrcBot{
+	return this.bots[serverName]
+}

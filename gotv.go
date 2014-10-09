@@ -55,6 +55,9 @@ func main() {
 	ircHandler := handler.NewIrcHandler(ircClient)
 	r.PathPrefix("/irc/").HandlerFunc(ircHandler.HandleRequests)
 
+	downloadsHandler := handler.NewDownloadsHandler(ircClient)
+	r.PathPrefix("/downloads/").HandlerFunc(downloadsHandler.HandleRequests)
+
 
 	log.Printf("Running on port %d\n", *port)
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
