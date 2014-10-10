@@ -10,7 +10,7 @@ angular.module('xtv.controllers').
     $scope.loadDownloads = function () {
         $http.get('downloads/listDownloads',{params: { 'nocache': new Date().getTime() }}).success(function(response){
             if (response.status == 'ok') {
-                $scope.downloads = response.results;
+                $scope.downloads = response.downloads;
             } else {
                 msg.error (response.message);
             }

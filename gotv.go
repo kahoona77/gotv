@@ -45,6 +45,12 @@ func main() {
 	//IrcClient
 	ircClient := irc.NewClient (packetsRepo, serverRepo, &settings)
 
+	//DccServie
+	dccService := irc.NewDccService (ircClient)
+	ircClient.DccService = dccService
+
+
+
 	//Handlers
 	dataHandler := handler.NewDataHandler(serverRepo, settingsRepo)
 	r.PathPrefix("/data/").HandlerFunc(dataHandler.HandleRequests)
@@ -55,7 +61,7 @@ func main() {
 	ircHandler := handler.NewIrcHandler(ircClient)
 	r.PathPrefix("/irc/").HandlerFunc(ircHandler.HandleRequests)
 
-	downloadsHandler := handler.NewDownloadsHandler(ircClient)
+	downloadsHandler := handler.NewDownloadsHandler(dccService)
 	r.PathPrefix("/downloads/").HandlerFunc(downloadsHandler.HandleRequests)
 
 

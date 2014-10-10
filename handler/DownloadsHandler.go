@@ -6,22 +6,22 @@ import (
 	"github.com/kahoona77/gotv/irc"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type DownloadsResult struct {
 	Success  bool                `json:"success"`
 	Status   string              `json:"status"`
-	Packets  []domain.Packet     `json:"packets,omitempty"`
-	Count    int                 `json:"count,omitempty"`
+	Downloads  []*irc.Download    `json:"downloads"`
 }
 
 type DownloadsHandler struct {
-	Client   *irc.IrcClient
+	dcc   *irc.DccService
 }
 
-func NewDownloadsHandler(client   *irc.IrcClient) *DownloadsHandler {
+func NewDownloadsHandler(dcc   *irc.DccService) *DownloadsHandler {
 	h := new(DownloadsHandler)
-	h.Client = client
+	h.dcc = dcc
 	return h
 }
 
@@ -32,13 +32,13 @@ func (this DownloadsHandler) HandleRequests(w http.ResponseWriter, r *http.Reque
 	switch {
 	case url== "/downloads/downloadPacket":
 		this.downloadPacket(w, r)
-	// case url == "/packets/listDownloads":
-	// 	this.listDownloads(w, r)
-	// case url == "/packets/cancelDownload":
+	case strings.HasPrefix(url, "/downloads/listDownloads"):
+		this.listDownloads(w, r)
+	// case url == "/downloads/cancelDownload":
 	// 	this.cancelDownload(w, r)
-	// case url == "/packets/resumeDownload":
+	// case url == "/downloads/resumeDownload":
 	// 	this.resumeDownload(w, r)
-	// case url == "/packets/stopDownload":
+	// case url == "/downloads/stopDownload":
 	// 	this.stopDownload(w, r)
 	}
 
@@ -52,9 +52,15 @@ func (this DownloadsHandler) downloadPacket(w http.ResponseWriter, r *http.Reque
 		"status":  "ok",
 	}
 	if readJson(r, "data", &packet) {
-		bot:= this.Client.GetBot (packet.Server)
-		bot.DownloadPacket (&packet)
+		this.dcc.DownloadPacket (&packet)
 	}
 
+	json.NewEncoder(w).Encode(data)
+}
+
+func (this DownloadsHandler) listDownloads(w http.ResponseWriter, r *http.Request) {
+
+	downloads:= this.dcc.ListDownloads()
+	data := DownloadsResult {true,"ok", downloads}
 	json.NewEncoder(w).Encode(data)
 }

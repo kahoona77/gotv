@@ -8,6 +8,7 @@ import (
 type IrcClient struct {
 	PacketsRepo  *domain.GoTvRepository
 	ServerRepo   *domain.GoTvRepository
+	DccService   *DccService
 	Settings     *domain.XtvSettings
 	bots         map[string]*IrcBot
 }
@@ -53,7 +54,7 @@ func (this *IrcClient) getAndUpdateBot (server *domain.Server) *IrcBot{
 	bot := this.bots[server.Name]
 	if (bot == nil) {
 		// create new bot
-		bot = NewIrcBot (this.PacketsRepo, this.Settings, server)
+		bot = NewIrcBot (this.PacketsRepo, this.DccService, this.Settings, server)
 		this.bots[server.Name] = bot
 	} else {
 		//update bot
