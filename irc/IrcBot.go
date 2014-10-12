@@ -93,12 +93,17 @@ func (this *IrcBot) parsePacket(conn *irc.Conn, line *irc.Line) *domain.Packet {
 		return nil
 	}
 
-	packet := domain.NewPacket(result[1], result[2], result[3], line.Nick, line.Target(), this.Server.Name, line.Time)
+	fileName := cleanFileName (result[3])
+	packet := domain.NewPacket(result[1], result[2], fileName, line.Nick, line.Target(), this.Server.Name, line.Time)
 
 	//save packet
 	this.PacketsRepo.Save(packet.Id, packet)
 
 	return packet
+}
+
+func cleanFileName (filename string) string {
+	return strings.Trim(filename, "\u263B\u263C\u0002\u000f ")
 }
 
 func (this *IrcBot) logToConsole(msg string) {
@@ -110,11 +115,18 @@ func (this *IrcBot) logToConsole(msg string) {
 	this.LogCount++
 }
 
-func (this *IrcBot) DownloadPacket(packet *domain.Packet) {
-	msg := "xdcc send " + getCleanPacketId(packet)
-	this.Conn.Privmsg(packet.Bot, msg)
+func (this *IrcBot) StartDownload(download *Download) {
+	this.logToConsole("Starting Download: " + download.File)
+	msg := "xdcc send " + getCleanPacketId(download)
+	this.Conn.Privmsg(download.Bot, msg)
 }
 
-func getCleanPacketId(packet *domain.Packet) string {
-	return strings.Replace(packet.PacketId, "#", "", -1)
+func (this *IrcBot) StopDownload(download *Download) {
+	this.logToConsole("Stopping Download: " + download.File)
+	msg := "xdcc cancel"
+	this.Conn.Privmsg(download.Bot, msg)
+}
+
+func getCleanPacketId(download *Download) string {
+	return strings.Replace(download.PacketId, "#", "", -1)
 }

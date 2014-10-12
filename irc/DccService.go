@@ -8,6 +8,7 @@ import (
   "log"
   "net"
   "os"
+  "io"
   "path/filepath"
   "strconv"
   "strings"
@@ -21,10 +22,17 @@ type DccFileEvent struct{
   Size      int64
 }
 
+type DccUpdate struct{
+  File       string
+  TotalBytes int64
+  Size       int64
+}
+
 type DccService struct {
   client       *IrcClient
   settings     *domain.XtvSettings
   downloads    map[string]*Download
+  updateChan   chan DccUpdate
 }
 
 func NewDccService(client *IrcClient) *DccService {
@@ -32,6 +40,10 @@ func NewDccService(client *IrcClient) *DccService {
   dcc.client       = client
   dcc.settings     = client.Settings
   dcc.downloads    = make(map[string]*Download)
+  dcc.updateChan   = make(chan DccUpdate)
+
+  //start download update
+  go dcc.updateDownloads()
   return dcc
 }
 
@@ -43,7 +55,6 @@ func (dcc *DccService) handleDCC(conn *irc.Conn, line *irc.Line) {
   if ctcpType == "DCC" {
     cmd := request[0]
     if cmd == "SEND" {
-      log.Printf("DCC SEND\n")
       fileName := request[1]
       addrInt, _ := strconv.ParseInt(request[2], 0, 64)
       address := inet_ntoa(addrInt)
@@ -53,17 +64,36 @@ func (dcc *DccService) handleDCC(conn *irc.Conn, line *irc.Line) {
       log.Printf("file: %v, addr: %v, port: %v, size:%v\n", fileName, address.String(), port, size)
       fileEvent := DccFileEvent {"SEND", fileName, address, port, size}
 
-      go dcc.startDownload (&fileEvent)
+      resume, startPos := dcc.fileExists (&fileEvent)
+
+      if (resume) {
+        // file already exists -> send resume request
+        msg:=" :\u0001" + "DCC RESUME " + fileName + " " + port + " " + strconv.FormatInt(startPos, 10) + "\u0001"
+        conn.Privmsg(line.Nick, msg)
+      } else {
+        // This is a new file start from beginning
+        go dcc.startDownload (&fileEvent, startPos)
+      }
+    } else if cmd == "RESUME" {
+      log.Printf("received RESUME")
+    } else {
+      log.Printf("received unmatched DCC command: %v", cmd)
     }
   }
 }
 
-func (dcc *DccService) startDownload (fileEvent *DccFileEvent) {
+func (dcc *DccService) startDownload (fileEvent *DccFileEvent, startPos int64) {
   file := dcc.getTempFile (fileEvent)
+
+  // set start position
+  var totalBytes int64
+  totalBytes = startPos
+  file.Seek (startPos, 0)
+
   // make a write buffer
   w := bufio.NewWriter(file)
 
-  // close fo on exit and check for its returned error
+  // close file on exit and check for its returned error
   defer func() {
     if err := file.Close(); err != nil {
       panic(err)
@@ -77,9 +107,8 @@ func (dcc *DccService) startDownload (fileEvent *DccFileEvent) {
     return
   }
 
+  var complete bool
   var inBuf = make([]byte, 1024)
-  var totalBytes int64
-  totalBytes = 0
   counter := 0
 
   //read-loop
@@ -87,7 +116,11 @@ func (dcc *DccService) startDownload (fileEvent *DccFileEvent) {
     //read a chunk
     n, err := conn.Read(inBuf)
     if err != nil {
-      log.Printf("Read error: %s", err)
+      if (err == io.EOF) {
+        complete = true
+      } else {
+        log.Printf("Read error: %s", err)
+      }
       break
     }
     totalBytes += int64(n)
@@ -111,12 +144,18 @@ func (dcc *DccService) startDownload (fileEvent *DccFileEvent) {
       break
     }
 
+    counter++
     if (counter == 500) {
-      dcc.updateDownload(fileEvent.FileName, totalBytes);
+      dcc.updateChan <- DccUpdate{fileEvent.FileName, totalBytes, fileEvent.Size}
       counter = 0;
     }
   }
   conn.Close()
+
+  if (complete) {
+    dcc.completeDownload (fileEvent.FileName)
+  }
+
 }
 
 func (dcc *DccService) getTempFile (fileEvent *DccFileEvent) *os.File{
@@ -128,6 +167,16 @@ func (dcc *DccService) getTempFile (fileEvent *DccFileEvent) *os.File{
   }
 
   return fo
+}
+
+func (dcc *DccService) fileExists (fileEvent *DccFileEvent) (bool, int64) {
+  filename := filepath.FromSlash (dcc.settings.TempDir + "/" + fileEvent.FileName)
+  info, err := os.Stat(filename)
+  if (os.IsNotExist(err)) {
+    return false, 0
+  }
+
+  return true, info.Size()
 }
 
 func makeOutBuffer(totalBytes int64) []byte {

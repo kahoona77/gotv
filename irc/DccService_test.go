@@ -7,8 +7,9 @@ import (
 
 func TestGetTempFile(t *testing.T) {
   settings := new (domain.XtvSettings)
+  client := IrcClient {Settings: settings}
   settings.TempDir = "d:/temp"
-  dcc := NewDccService (settings)
+  dcc := NewDccService (&client)
   fileEvent := DccFileEvent {"SEND", "simpsons.mkv", nil, "", 0}
 
   file := dcc.getTempFile (&fileEvent)

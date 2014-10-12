@@ -34,12 +34,12 @@ func (this DownloadsHandler) HandleRequests(w http.ResponseWriter, r *http.Reque
 		this.downloadPacket(w, r)
 	case strings.HasPrefix(url, "/downloads/listDownloads"):
 		this.listDownloads(w, r)
-	// case url == "/downloads/cancelDownload":
-	// 	this.cancelDownload(w, r)
-	// case url == "/downloads/resumeDownload":
-	// 	this.resumeDownload(w, r)
-	// case url == "/downloads/stopDownload":
-	// 	this.stopDownload(w, r)
+	case url == "/downloads/cancelDownload":
+		this.cancelDownload(w, r)
+	case url == "/downloads/resumeDownload":
+		this.resumeDownload(w, r)
+	case url == "/downloads/stopDownload":
+		this.stopDownload(w, r)
 	}
 
 	return
@@ -62,5 +62,36 @@ func (this DownloadsHandler) listDownloads(w http.ResponseWriter, r *http.Reques
 
 	downloads:= this.dcc.ListDownloads()
 	data := DownloadsResult {true,"ok", downloads}
+	json.NewEncoder(w).Encode(data)
+}
+
+func (this DownloadsHandler) stopDownload(w http.ResponseWriter, r *http.Request) {
+	var download irc.Download
+	if readJson(r, "data", &download) {
+		this.dcc.StopDownload (&download)
+	}
+
+	data := DownloadsResult {true,"ok", nil}
+	json.NewEncoder(w).Encode(data)
+}
+
+func (this DownloadsHandler) cancelDownload(w http.ResponseWriter, r *http.Request) {
+	var download irc.Download
+	if readJson(r, "data", &download) {
+		this.dcc.CancelDownload (&download)
+	}
+
+	data := DownloadsResult {true,"ok", nil}
+	json.NewEncoder(w).Encode(data)
+}
+
+
+func (this DownloadsHandler) resumeDownload(w http.ResponseWriter, r *http.Request) {
+	var download irc.Download
+	if readJson(r, "data", &download) {
+		this.dcc.ResumeDownload (&download)
+	}
+
+	data := DownloadsResult {true,"ok", nil}
 	json.NewEncoder(w).Encode(data)
 }

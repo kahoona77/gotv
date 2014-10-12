@@ -5,6 +5,7 @@ import (
 	"github.com/kahoona77/gotv/domain"
 	"log"
 	"strings"
+	"time"
 	"net/http"
 	"labix.org/v2/mgo/bson"
 )
@@ -62,6 +63,20 @@ func createRegexQuery (query string) string {
 
 
 func (this PacketsHandler) countPackets(w http.ResponseWriter, r *http.Request) {
+	//clean old packets
+	//[date: ['$lt': yesterday.format("yyyy-MM-dd'T'HH:mm:ss.SSSZ")]]
+	minusOneDay, _ := time.ParseDuration("-24h")
+	yesterday:= time.Now().Add(minusOneDay)
+	removeQuery := bson.M{"date": bson.M{"$lt": yesterday}}
+
+	info, err := this.PacketsRepo.RemoveAll(&removeQuery)
+	if (err != nil) {
+		log.Printf("error while deleting old packets: %v", err)
+	} else {
+		log.Printf("removed %v old packets", info.Removed)
+	}
+
+
 	count, _ := this.PacketsRepo.CountAll()
 
 	data := PacketsResult {true,"ok", nil, count}

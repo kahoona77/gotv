@@ -39,6 +39,10 @@ func (this GoTvRepository) Remove(docId string) error{
   return this.Collection.RemoveId(docId)
 }
 
+func (this GoTvRepository) RemoveAll (query *bson.M) (info *mgo.ChangeInfo, err error) {
+   return this.Collection.RemoveAll (query)
+}
+
 func (this GoTvRepository) Save(docId string,doc MongoDomain) (info *mgo.ChangeInfo, err error) {
   if (docId == "") {
     docId = bson.NewObjectId().Hex()
