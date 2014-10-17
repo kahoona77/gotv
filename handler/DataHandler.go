@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"github.com/kahoona77/gotv/domain"
+	"github.com/kahoona77/gotv/irc"
 	"log"
 	"net/http"
 )
@@ -11,18 +12,20 @@ type DataResult struct {
 	Success  bool                `json:"success"`
 	Status   string              `json:"status"`
 	Servers  []domain.Server     `json:"servers,omitempty"`
-	Settings *domain.XtvSettings  `json:"settings,omitempty"`
+	Settings *domain.XtvSettings `json:"settings,omitempty"`
 }
 
 type DataHandler struct {
 	ServerRepo   *domain.GoTvRepository
 	SettingsRepo *domain.GoTvRepository
+	DccService   *irc.DccService
 }
 
-func NewDataHandler(serverRepo *domain.GoTvRepository, settingsRepo *domain.GoTvRepository) *DataHandler {
+func NewDataHandler(serverRepo *domain.GoTvRepository, settingsRepo *domain.GoTvRepository, dccService *irc.DccService) *DataHandler {
 	h := new(DataHandler)
 	h.ServerRepo = serverRepo
 	h.SettingsRepo = settingsRepo
+	h.DccService = dccService
 	return h
 }
 
@@ -51,7 +54,7 @@ func (this DataHandler) saveServer(w http.ResponseWriter, r *http.Request) {
 		server domain.Server
 		err    error
 	)
-	data := DataResult {true,"ok", nil, nil}
+	data := DataResult{true, "ok", nil, nil}
 	if readJson(r, "data", &server) {
 
 		_, err = this.ServerRepo.Save(server.Id, &server)
@@ -70,7 +73,7 @@ func (this DataHandler) deleteServer(w http.ResponseWriter, r *http.Request) {
 		server domain.Server
 		err    error
 	)
-	data := DataResult {true,"ok", nil, nil}
+	data := DataResult{true, "ok", nil, nil}
 
 	if readJson(r, "data", &server) {
 		err = this.ServerRepo.Remove(server.Id)
@@ -89,7 +92,7 @@ func (this DataHandler) loadServers(w http.ResponseWriter, r *http.Request) {
 	var results []domain.Server
 	this.ServerRepo.All(&results)
 
-	data := DataResult {true,"ok", results, nil}
+	data := DataResult{true, "ok", results, nil}
 	json.NewEncoder(w).Encode(data)
 }
 
@@ -97,14 +100,14 @@ func (this DataHandler) loadSettings(w http.ResponseWriter, r *http.Request) {
 	var settings domain.XtvSettings
 	this.SettingsRepo.FindFirst(&settings)
 
-	data := DataResult {true,"ok", nil, &settings}
+	data := DataResult{true, "ok", nil, &settings}
 	json.NewEncoder(w).Encode(data)
 }
 
 func (this DataHandler) saveSettings(w http.ResponseWriter, r *http.Request) {
 	var settings domain.XtvSettings
 	var err error
-	data := DataResult {true,"ok", nil, nil}
+	data := DataResult{true, "ok", nil, nil}
 
 	if readJson(r, "data", &settings) {
 		_, err = this.SettingsRepo.Save(settings.Id, &settings)
@@ -114,6 +117,7 @@ func (this DataHandler) saveSettings(w http.ResponseWriter, r *http.Request) {
 			data.Success = false
 			data.Status = "error"
 		}
+		this.DccService.UpdateSettings(&settings)
 	}
 
 	json.NewEncoder(w).Encode(data)

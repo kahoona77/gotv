@@ -43,16 +43,14 @@ func main() {
 	settingsRepo.FindFirst(&settings)
 
 	//IrcClient
-	ircClient := irc.NewClient (packetsRepo, serverRepo, &settings)
+	ircClient := irc.NewClient(packetsRepo, serverRepo, &settings)
 
 	//DccServie
-	dccService := irc.NewDccService (ircClient)
+	dccService := irc.NewDccService(ircClient)
 	ircClient.DccService = dccService
 
-
-
 	//Handlers
-	dataHandler := handler.NewDataHandler(serverRepo, settingsRepo)
+	dataHandler := handler.NewDataHandler(serverRepo, settingsRepo, dccService)
 	r.PathPrefix("/data/").HandlerFunc(dataHandler.HandleRequests)
 
 	packetsHandler := handler.NewPacketsHandler(packetsRepo)
@@ -63,7 +61,6 @@ func main() {
 
 	downloadsHandler := handler.NewDownloadsHandler(dccService)
 	r.PathPrefix("/downloads/").HandlerFunc(downloadsHandler.HandleRequests)
-
 
 	log.Printf("Running on port %d\n", *port)
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)

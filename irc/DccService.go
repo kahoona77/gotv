@@ -3,6 +3,7 @@ package irc
 import (
 	"bufio"
 	"encoding/binary"
+	"github.com/efarrer/iothrottler"
 	irc "github.com/fluffle/goirc/client"
 	"github.com/kahoona77/gotv/domain"
 	"io"
@@ -37,6 +38,7 @@ type DccService struct {
 	downloads  map[string]*Download
 	resumes    map[string]*DccFileEvent
 	updateChan chan DccUpdate
+	connPool   *iothrottler.IOThrottlerPool
 }
 
 // NewDccService creates a new DccService
@@ -47,6 +49,7 @@ func NewDccService(client *IrcClient) *DccService {
 	dcc.downloads = make(map[string]*Download)
 	dcc.resumes = make(map[string]*DccFileEvent)
 	dcc.updateChan = make(chan DccUpdate)
+	dcc.connPool = iothrottler.NewIOThrottlerPool(iothrottler.Unlimited)
 
 	//start download update
 	go dcc.updateDownloads()
@@ -135,9 +138,17 @@ func (dcc *DccService) startDownload(fileEvent *DccFileEvent, startPos int64) {
 	}()
 
 	//connect
-	conn, err := net.Dial("tcp", fileEvent.IP.String()+":"+fileEvent.Port)
+	tcpConn, err := net.Dial("tcp", fileEvent.IP.String()+":"+fileEvent.Port)
 	if err != nil {
 		log.Printf("Connect error: %v", err)
+		return
+	}
+
+	//add to throttled pool
+	conn, err := dcc.connPool.AddConn(tcpConn)
+	if err != nil {
+		log.Printf("Error while adding to connection pool: %s", err)
+		tcpConn.Close()
 		return
 	}
 
@@ -228,4 +239,19 @@ func inetNtoa(ipnr int64) net.IP {
 	bytes[3] = byte((ipnr >> 24) & 0xFF)
 
 	return net.IPv4(bytes[3], bytes[2], bytes[1], bytes[0])
+}
+
+// UpdateSettings - update the settings
+func (dcc *DccService) UpdateSettings(settings *domain.XtvSettings) {
+	dcc.settings = settings
+	dcc.setDownloadLimit(settings.MaxDownStream)
+}
+
+// SetDownloadLimit - Sets the downloadlimit in KiloByte / Second
+func (dcc *DccService) setDownloadLimit(maxDownStream int) {
+	if maxDownStream <= 0 {
+		dcc.connPool.SetBandwidth(iothrottler.Unlimited)
+	} else {
+		dcc.connPool.SetBandwidth(iothrottler.Kbps * iothrottler.Bandwidth(maxDownStream*8))
+	}
 }
