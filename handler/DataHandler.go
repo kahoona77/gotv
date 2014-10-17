@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/kahoona77/gotv/domain"
 	"github.com/kahoona77/gotv/irc"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -13,6 +14,7 @@ type DataResult struct {
 	Status   string              `json:"status"`
 	Servers  []domain.Server     `json:"servers,omitempty"`
 	Settings *domain.XtvSettings `json:"settings,omitempty"`
+	LogFile  string              `json:"logFile,omitempty"`
 }
 
 type DataHandler struct {
@@ -29,35 +31,38 @@ func NewDataHandler(serverRepo *domain.GoTvRepository, settingsRepo *domain.GoTv
 	return h
 }
 
-func (this DataHandler) HandleRequests(w http.ResponseWriter, r *http.Request) {
+func (dh DataHandler) HandleRequests(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.String()
-	log.Print("URL: " + url)
 
 	switch {
 	case url == "/data/loadServers":
-		this.loadServers(w, r)
+		dh.loadServers(w, r)
 	case url == "/data/saveServer":
-		this.saveServer(w, r)
+		dh.saveServer(w, r)
 	case url == "/data/deleteServer":
-		this.deleteServer(w, r)
+		dh.deleteServer(w, r)
 	case url == "/data/loadSettings":
-		this.loadSettings(w, r)
+		dh.loadSettings(w, r)
 	case url == "/data/saveSettings":
-		this.saveSettings(w, r)
+		dh.saveSettings(w, r)
+	case url == "/data/loadLogFile":
+		dh.loadLogFile(w, r)
+	case url == "/data/clearLogFile":
+		dh.clearLogFile(w, r)
 	}
 
 	return
 }
 
-func (this DataHandler) saveServer(w http.ResponseWriter, r *http.Request) {
+func (dh DataHandler) saveServer(w http.ResponseWriter, r *http.Request) {
 	var (
 		server domain.Server
 		err    error
 	)
-	data := DataResult{true, "ok", nil, nil}
+	data := DataResult{true, "ok", nil, nil, ""}
 	if readJson(r, "data", &server) {
 
-		_, err = this.ServerRepo.Save(server.Id, &server)
+		_, err = dh.ServerRepo.Save(server.Id, &server)
 
 		if err != nil {
 			data.Success = false
@@ -68,15 +73,15 @@ func (this DataHandler) saveServer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func (this DataHandler) deleteServer(w http.ResponseWriter, r *http.Request) {
+func (dh DataHandler) deleteServer(w http.ResponseWriter, r *http.Request) {
 	var (
 		server domain.Server
 		err    error
 	)
-	data := DataResult{true, "ok", nil, nil}
+	data := DataResult{true, "ok", nil, nil, ""}
 
 	if readJson(r, "data", &server) {
-		err = this.ServerRepo.Remove(server.Id)
+		err = dh.ServerRepo.Remove(server.Id)
 
 		if err != nil {
 			log.Printf("%v", err)
@@ -88,37 +93,53 @@ func (this DataHandler) deleteServer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func (this DataHandler) loadServers(w http.ResponseWriter, r *http.Request) {
+func (dh DataHandler) loadServers(w http.ResponseWriter, r *http.Request) {
 	var results []domain.Server
-	this.ServerRepo.All(&results)
+	dh.ServerRepo.All(&results)
 
-	data := DataResult{true, "ok", results, nil}
+	data := DataResult{true, "ok", results, nil, ""}
 	json.NewEncoder(w).Encode(data)
 }
 
-func (this DataHandler) loadSettings(w http.ResponseWriter, r *http.Request) {
+func (dh DataHandler) loadSettings(w http.ResponseWriter, r *http.Request) {
 	var settings domain.XtvSettings
-	this.SettingsRepo.FindFirst(&settings)
+	dh.SettingsRepo.FindFirst(&settings)
 
-	data := DataResult{true, "ok", nil, &settings}
+	data := DataResult{true, "ok", nil, &settings, ""}
 	json.NewEncoder(w).Encode(data)
 }
 
-func (this DataHandler) saveSettings(w http.ResponseWriter, r *http.Request) {
+func (dh DataHandler) saveSettings(w http.ResponseWriter, r *http.Request) {
 	var settings domain.XtvSettings
 	var err error
-	data := DataResult{true, "ok", nil, nil}
+	data := DataResult{true, "ok", nil, nil, ""}
 
 	if readJson(r, "data", &settings) {
-		_, err = this.SettingsRepo.Save(settings.Id, &settings)
+		_, err = dh.SettingsRepo.Save(settings.Id, &settings)
 
 		if err != nil {
 			log.Printf("%v", err)
 			data.Success = false
 			data.Status = "error"
 		}
-		this.DccService.UpdateSettings(&settings)
+		dh.DccService.UpdateSettings(&settings)
 	}
 
+	json.NewEncoder(w).Encode(data)
+}
+
+func (dh DataHandler) loadLogFile(w http.ResponseWriter, r *http.Request) {
+	settings := dh.DccService.GetSettings()
+	buf, _ := ioutil.ReadFile(settings.LogFile)
+
+	data := DataResult{true, "ok", nil, nil, string(buf)}
+	json.NewEncoder(w).Encode(data)
+}
+
+func (dh DataHandler) clearLogFile(w http.ResponseWriter, r *http.Request) {
+	settings := dh.DccService.GetSettings()
+	ioutil.WriteFile(settings.LogFile, []byte(""), 0644)
+
+	data := DataResult{true, "ok", nil, nil, ""}
 	json.NewEncoder(w).Encode(data)
 }

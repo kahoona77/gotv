@@ -247,6 +247,11 @@ func (dcc *DccService) UpdateSettings(settings *domain.XtvSettings) {
 	dcc.setDownloadLimit(settings.MaxDownStream)
 }
 
+// GetSettings - get the settings
+func (dcc *DccService) GetSettings() *domain.XtvSettings {
+	return dcc.settings
+}
+
 // SetDownloadLimit - Sets the downloadlimit in KiloByte / Second
 func (dcc *DccService) setDownloadLimit(maxDownStream int) {
 	if maxDownStream <= 0 {

@@ -93,7 +93,7 @@ func (this *IrcBot) parsePacket(conn *irc.Conn, line *irc.Line) *domain.Packet {
 		return nil
 	}
 
-	fileName := cleanFileName (result[3])
+	fileName := cleanFileName(result[3])
 	packet := domain.NewPacket(result[1], result[2], fileName, line.Nick, line.Target(), this.Server.Name, line.Time)
 
 	//save packet
@@ -102,7 +102,7 @@ func (this *IrcBot) parsePacket(conn *irc.Conn, line *irc.Line) *domain.Packet {
 	return packet
 }
 
-func cleanFileName (filename string) string {
+func cleanFileName(filename string) string {
 	return strings.Trim(filename, "\u263B\u263C\u0002\u000f ")
 }
 

@@ -2,9 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/kahoona77/gotv/irc"
 	"github.com/kahoona77/gotv/domain"
-	"log"
+	"github.com/kahoona77/gotv/irc"
 	"net/http"
 )
 
@@ -20,7 +19,6 @@ func NewIrcHandler(client *irc.IrcClient) *IrcHandler {
 
 func (this IrcHandler) HandleRequests(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.String()
-	log.Print("URL: " + url)
 
 	switch {
 	case url == "/irc/toggleConnection":
@@ -41,7 +39,7 @@ func (this *IrcHandler) toggleConnection(w http.ResponseWriter, r *http.Request)
 		"status":  "ok",
 	}
 	if readJson(r, "data", &server) {
-		this.Client.ToggleConnection (&server)
+		this.Client.ToggleConnection(&server)
 		data["result"] = server
 	}
 
@@ -55,7 +53,7 @@ func (this *IrcHandler) getServerStatus(w http.ResponseWriter, r *http.Request) 
 		"status":  "undefined",
 	}
 	if readJson(r, "data", &server) {
-		this.Client.GetServerStatus (&server)
+		this.Client.GetServerStatus(&server)
 		data["status"] = server.Status
 	}
 
@@ -66,10 +64,10 @@ func (this *IrcHandler) getServerConsole(w http.ResponseWriter, r *http.Request)
 	var server domain.Server
 	data := map[string]interface{}{
 		"success": true,
-		"console":  "",
+		"console": "",
 	}
 	if readJson(r, "data", &server) {
-		data["console"] = this.Client.GetServerConsole (&server)
+		data["console"] = this.Client.GetServerConsole(&server)
 	}
 
 	json.NewEncoder(w).Encode(data)

@@ -11,13 +11,23 @@ import (
 	"labix.org/v2/mgo"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
 func main() {
 	// command line flags
 	port := flag.Int("port", 8080, "port to serve on")
+	logFile := flag.String("log", "xtv.log", "log-file")
 	flag.Parse()
+
+	// setup log
+	f, err := os.OpenFile(*logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Printf("error opening file: %v", err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
 
 	//creating db
 	session, err := mgo.Dial("localhost")
@@ -41,6 +51,7 @@ func main() {
 	//load Settings
 	var settings domain.XtvSettings
 	settingsRepo.FindFirst(&settings)
+	settings.LogFile = *logFile
 
 	//IrcClient
 	ircClient := irc.NewClient(packetsRepo, serverRepo, &settings)
@@ -62,12 +73,13 @@ func main() {
 	downloadsHandler := handler.NewDownloadsHandler(dccService)
 	r.PathPrefix("/downloads/").HandlerFunc(downloadsHandler.HandleRequests)
 
-	log.Printf("Running on port %d\n", *port)
+	log.Printf("XTV (Go) started port %d\n", *port)
+	fmt.Printf("XTV (Go) started port %d\n", *port)
 	addr := fmt.Sprintf("127.0.0.1:%d", *port)
 	// this call blocks -- the progam runs here forever
 	http.Handle("/", r)
 	err = http.ListenAndServe(addr, nil)
-	fmt.Println(err.Error())
+	log.Println(err.Error())
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
