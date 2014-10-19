@@ -58,6 +58,7 @@ func main() {
 
 	//DccServie
 	dccService := irc.NewDccService(ircClient)
+	dccService.UpdateSettings (&settings)
 	ircClient.DccService = dccService
 
 	//Handlers

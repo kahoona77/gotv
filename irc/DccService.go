@@ -86,8 +86,9 @@ func (dcc *DccService) handleSend(request []string, conn *irc.Conn, line *irc.Li
 
 	if resume {
 		// file already exists -> send resume request
-		msg := " :\u0001" + "DCC RESUME " + fileName + " " + port + " " + strconv.FormatInt(startPos, 10) + "\u0001"
-		conn.Privmsg(line.Nick, msg)
+		msg := fileName + " " + port + " " + strconv.FormatInt(startPos, 10)
+		log.Printf("sending resume [%v]", msg)
+		conn.Ctcp(line.Nick, "DCC RESUME", msg)
 		//add to resumes
 		dcc.resumes[fileEvent.FileName] = &fileEvent
 	} else {
@@ -199,19 +200,28 @@ func (dcc *DccService) startDownload(fileEvent *DccFileEvent, startPos int64) {
 
 	if complete {
 		dcc.completeDownload(fileEvent.FileName)
+	} else {
+		dcc.failDownload(fileEvent.FileName)
 	}
 
 }
 
 func (dcc *DccService) getTempFile(fileEvent *DccFileEvent) *os.File {
 	filename := filepath.FromSlash(dcc.settings.TempDir + "/" + fileEvent.FileName)
-
-	fo, err := os.Create(filename)
-	if err != nil {
-		log.Printf("File create error: %s", err)
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		fo, err := os.Create(filename)
+		if err != nil {
+			log.Printf("File create error: %s", err)
+		}
+		return fo
+	} else {
+		fo, err := os.OpenFile(filename, os.O_WRONLY, 0777)
+		if err != nil {
+			log.Printf("File open error: %s", err)
+		}
+		return fo
 	}
-
-	return fo
 }
 
 func (dcc *DccService) fileExists(fileEvent *DccFileEvent) (bool, int64) {
@@ -220,7 +230,6 @@ func (dcc *DccService) fileExists(fileEvent *DccFileEvent) (bool, int64) {
 	if os.IsNotExist(err) {
 		return false, 0
 	}
-
 	return true, info.Size()
 }
 
@@ -256,7 +265,9 @@ func (dcc *DccService) GetSettings() *domain.XtvSettings {
 func (dcc *DccService) setDownloadLimit(maxDownStream int) {
 	if maxDownStream <= 0 {
 		dcc.connPool.SetBandwidth(iothrottler.Unlimited)
+		log.Printf("download unlimited")
 	} else {
 		dcc.connPool.SetBandwidth(iothrottler.Kbps * iothrottler.Bandwidth(maxDownStream*8))
+		log.Printf("currentDownloadLimit: %v", iothrottler.Kbps * iothrottler.Bandwidth(maxDownStream*8))
 	}
 }

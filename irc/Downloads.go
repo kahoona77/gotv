@@ -61,7 +61,8 @@ func (dcc *DccService) ResumeDownload(parsedDownload *Download) {
 	download := dcc.downloads[parsedDownload.Id]
 	if download != nil {
 		if download.Status != "RUNNING" {
-			dcc.StopDownload(download)
+			bot := dcc.client.GetBot(download.Server)
+			bot.StartDownload(download)
 		}
 	}
 }
@@ -93,6 +94,19 @@ func (dcc *DccService) completeDownload(file string) {
 	if download != nil {
 		log.Printf("Download completed '%v'", download.File)
 		download.Status = "COMPLETE"
+
+		//TODO move file to destination
+
+	} else {
+		log.Printf("download not found: %v in %v", file, dcc.downloads)
+	}
+}
+
+func (dcc *DccService) failDownload(file string) {
+	download := dcc.downloads[file]
+	if download != nil {
+		log.Printf("Download failed '%v'", download.File)
+		download.Status = "FAILED"
 
 		//TODO move file to destination
 

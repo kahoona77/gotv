@@ -122,6 +122,7 @@ func (dh DataHandler) saveSettings(w http.ResponseWriter, r *http.Request) {
 			data.Success = false
 			data.Status = "error"
 		}
+		log.Printf("update settings: %v", settings)
 		dh.DccService.UpdateSettings(&settings)
 	}
 
