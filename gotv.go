@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/kahoona77/gotv/tvdb"
 	"github.com/kahoona77/gotv/domain"
 	"github.com/kahoona77/gotv/handler"
 	"github.com/kahoona77/gotv/irc"
@@ -47,6 +48,7 @@ func main() {
 	serverRepo := domain.NewRepository(session, "servers")
 	settingsRepo := domain.NewRepository(session, "settings")
 	packetsRepo := domain.NewRepository(session, "packets")
+	showsRepo := domain.NewRepository(session, "shows")
 
 	//load Settings
 	var settings domain.XtvSettings
@@ -61,12 +63,18 @@ func main() {
 	dccService.UpdateSettings (&settings)
 	ircClient.DccService = dccService
 
+	//TVDB-Client
+	tvdb := tvdb.NewTvdbClient()
+
 	//Handlers
 	dataHandler := handler.NewDataHandler(serverRepo, settingsRepo, dccService)
 	r.PathPrefix("/data/").HandlerFunc(dataHandler.HandleRequests)
 
 	packetsHandler := handler.NewPacketsHandler(packetsRepo)
 	r.PathPrefix("/packets/").HandlerFunc(packetsHandler.HandleRequests)
+
+	showssHandler := handler.NewShowsHandler(showsRepo, tvdb)
+	r.PathPrefix("/shows/").HandlerFunc(showssHandler.HandleRequests)
 
 	ircHandler := handler.NewIrcHandler(ircClient)
 	r.PathPrefix("/irc/").HandlerFunc(ircHandler.HandleRequests)
@@ -85,7 +93,7 @@ func main() {
 
 func notFound(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Path
-	if p == "/" || strings.HasPrefix(p, "/home") || strings.HasPrefix(p, "/search") || strings.HasPrefix(p, "/downloads") || strings.HasPrefix(p, "/logFile") {
+	if p == "/" || strings.HasPrefix(p, "/home") || strings.HasPrefix(p, "/search") || strings.HasPrefix(p, "/downloads") || strings.HasPrefix(p, "/logFile") || strings.HasPrefix(p, "/shows") {
 		body, _ := ioutil.ReadFile("./web/index.html")
 		fmt.Fprintf(w, string(body))
 		return

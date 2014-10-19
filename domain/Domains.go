@@ -68,3 +68,15 @@ type XtvSettings struct {
 func (this *XtvSettings) SetId(id string) {
 	this.Id = id
 }
+
+//Packet
+type Show struct {
+	Id       string    `json:"id" bson:"_id"`
+	Name     string    `json:"name" bson:"name"`
+	TvdbId   string    `json:"tvdbId" bson:"tvdbId"`
+	Banner   string    `json:"banner" bson:"banner"`
+}
+
+func (this *Show) SetId(id string) {
+	this.Id = id
+}
