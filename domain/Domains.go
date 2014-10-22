@@ -71,10 +71,11 @@ func (this *XtvSettings) SetId(id string) {
 
 //Packet
 type Show struct {
-	Id       string    `json:"id" bson:"_id"`
-	Name     string    `json:"name" bson:"name"`
-	TvdbId   string    `json:"tvdbId" bson:"tvdbId"`
-	Banner   string    `json:"banner" bson:"banner"`
+	Id            string    `json:"id" bson:"_id"`
+	Name          string    `json:"name" bson:"name"`
+	TvdbId        string    `json:"tvdbId" bson:"tvdbId"`
+	Banner        string    `json:"banner" bson:"banner"`
+	FirstAired    string    `json:"firstAired " bson:"firstAired "`
 }
 
 func (this *Show) SetId(id string) {

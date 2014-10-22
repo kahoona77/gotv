@@ -16,10 +16,10 @@ type ShowsResult struct {
 
 type ShowsHandler struct {
   showsRepo   *domain.GoTvRepository
-  tvdb        *tvdb.TvdbClient
+  tvdb        *tvdb.Client
 }
 
-func NewShowsHandler(showsRepo *domain.GoTvRepository, client *tvdb.TvdbClient) *ShowsHandler {
+func NewShowsHandler(showsRepo *domain.GoTvRepository, client *tvdb.Client) *ShowsHandler {
   h := new(ShowsHandler)
   h.showsRepo = showsRepo
   h.tvdb      = client

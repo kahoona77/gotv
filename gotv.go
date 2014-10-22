@@ -64,7 +64,7 @@ func main() {
 	ircClient.DccService = dccService
 
 	//TVDB-Client
-	tvdb := tvdb.NewTvdbClient()
+	tvdb := tvdb.NewClient()
 
 	//Handlers
 	dataHandler := handler.NewDataHandler(serverRepo, settingsRepo, dccService)

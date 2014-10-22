@@ -6,14 +6,14 @@ import (
   tvdb "github.com/garfunkel/go-tvdb"
 )
 
-type TvdbClient struct {}
+type Client struct {}
 
-func NewTvdbClient() *TvdbClient {
-  client := new(TvdbClient)
+func NewClient() *Client {
+  client := new(Client)
   return client
 }
 
-func (client *TvdbClient) SearchShow (query string) []domain.Show {
+func (client *Client) SearchShow (query string) []domain.Show {
   var shows []domain.Show
 
   results, err := tvdb.GetSeries (query)
