@@ -22,7 +22,7 @@
                     </div>
                     <div class="row-content">
                       <div class="action-secondary" >
-                        <i title="delete Server" ng-click="showDeleteServerConfirm (server)" class="icon-material-delete"></i>
+                        <i title="delete Server" ng-click="showDeleteServerConfirm (server)" class="mdi-action-delete"></i>
                       </div>
                       <p class="list-group-item-heading">{{server.name}}</p>
                       <p class="list-group-item-text">Port: {{server.port}}</p>
@@ -48,7 +48,7 @@
                 <div  class="list-group-item" ng-class="{active: channel==selectedChannel}" ng-click="selectChannel(channel)">
                     <div class="row-content" style="min-height: 20px;">
                       <div class="action-secondary" style="top: 0">
-                        <i title="delete Channel" ng-click="showDeleteChannelConfirm (channel)" class="icon-material-delete"></i>
+                        <i title="delete Channel" ng-click="showDeleteChannelConfirm (channel)" class="mdi-action-delete"></i>
                       </div>
                       <p class="list-group-item-text">{{channel.name}}</p>
                     </div>

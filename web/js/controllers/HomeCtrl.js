@@ -115,9 +115,9 @@ angular.module('xtv.controllers').
 
     $scope.getStatusClass = function (server) {
       if (server.status == 'Connected') {
-         return 'icon-material-public';
+         return 'mdi-social-public';
       }
-      return 'icon-material-do-not-disturb';
+      return 'mdi-notification-do-not-disturb';
     };
 
     $scope.toggleConnection = function (server) {

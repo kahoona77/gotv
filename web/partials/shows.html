@@ -8,47 +8,85 @@
     <div class="col-sm-4">
         <div class="row">
             <div class="col-sm-12">
-                <strong>Shows</strong>
-                <div class="pull-right pointer" ng-click="showAddShowDialog()">
+                <h3 class="pull-left xtv-row-heading">Shows</h3>
+                <a class="btn btn-default btn-xs pull-right pointer" ng-click="showAddShowDialog()">
                     <span class="glyphicon glyphicon-plus"></span> Add Show
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-sm-12  list-group">
-                <a href="#" ng-repeat="show in shows | orderBy: 'name'" class="list-group-item" ng-class="{active: show==selectedShow}" ng-click="selectShow(show)">
-                    <strong>{{show.name}}</strong>
-                    <span title="delete Server" class="glyphicon glyphicon-trash pull-right xtv-server-icon" ng-click="showDeleteShowConfirm (show)"></span>
                 </a>
             </div>
         </div>
-    </div>
-    <div class="col-sm-8" ng-show="selectedShow">
         <div class="row">
-            <div class="col-sm-9">
-                <input type="checkbox" ng-Model="hideLoaded"> Hide "loaded" Episodes
+          <div class="col-sm-12  list-group">
+            <div ng-repeat="show in shows | orderBy: 'name'">
+              <div  class="list-group-item" ng-class="{active: show==selectedShow}" ng-click="selectShow(show)">
+                  <div class="row-action-primary">
+                      <i class="mdi-av-movie"></i>
+                  </div>
+                  <div class="row-content">
+                    <div class="action-secondary" >
+                      <i title="delete Show" ng-click="showDeleteShowConfirm (show)" class="mdi-action-delete"></i>
+                    </div>
+                    <p class="list-group-item-heading">{{show.name}}</p>
+                    <p class="list-group-item-text">{{show.firstAired}}</p>
+                  </div>
+              </div>
+              <div class="list-group-separator"></div>
             </div>
-            <div class="col-sm-3">
-                <a type="button" class="pull-right" ng-click="markShowAsLoaded (selectedShow)">Mark Show as "loaded"</a>
-            </div>
+          </div>
         </div>
-        <div ng-repeat='(season, episodes) in seasons'>
-            <div class="row" ng-show="episodesLeftToShow(episodes)">
-                <div class="col-sm-12">
-                    <strong>{{selectedShow.name}} - Season {{season}}:</strong>
-                    <a type="button" class="pull-right" ng-click="markSeasonAsLoaded (selectedShow, season)">Mark Season as "loaded"</a>
-                </div>
+    </div>
+    <div class="col-sm-8 panel panel-default" ng-show="selectedShow">
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-sm-12 well">
+            <div class="row">
+              <div class="col-sm-12">
+                <img src="http://thetvdb.com/banners/graphical/81189-g21.jpg" class="col-sm-12"/>
+              </div>
+
             </div>
             <div class="row">
-                <div class="col-sm-12 list-group">
-                    <a href="#" ng-repeat="episode in episodes  | orderBy: 'number'  | filter: showLoadedEpisode" class="list-group-item">
-                        {{episode.number}} - {{episode.name}} <small>(Air Date: {{episode.airDate}})</small>
-                        <span title="search" class="fa fa-search pull-right" ng-click="searchEpisode (selectedShow, episode)"></span>
-                        <span title="mark as loaded" ng-class="{'fa-square-o': !episode.loaded, 'fa-check-square-o': episode.loaded }" class="fa  pull-right" ng-click="markEpisode (episode)"></span>
-                    </a>
-                </div>
+              <div class="col-sm-12">
+                <p style="padding-top: 15px;">{{selectedShow.overview}} ff</p>
+              </div>
             </div>
+          </div>
         </div>
+        <div class="row">
+          <div class="col-sm-12">
+
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <form role="form" name="editShowForm">
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type="text" class="form-control" id="name" placeholder="Name" ng-model="selectedShow.name" required>
+                </div>
+                <div class="form-group">
+                    <label for="tvbdID">TvbdID:</label>
+                    <input type="text" class="form-control" id="tvbdID" placeholder="TvbdID" ng-model="selectedShow.tvbdId" required>
+                </div>
+                <div class="form-group">
+                    <label for="searchName">Search Name:</label>
+                    <input type="text" class="form-control" id="searchName" placeholder="Search Name" ng-model="selectedShow.searchName" required>
+                </div>
+                <div class="form-group">
+                    <label for="folder">Folder:</label>
+                    <input type="text" class="form-control" id="folder" placeholder="Folder" ng-model="selectedShow.folder" required>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <button type="submit" class="btn btn-default pull-right">Save</button>
+                    </div>
+                </div>
+            </form>
+          </div>
+        </div>
+
+
+
+      </div>
     </div>
 </div>
 
@@ -70,10 +108,13 @@
                     </div>
                 </form>
                 <table class="table">
-                    <tr ng-repeat="result in searchResults  | orderBy: 'name'">
-                        <td>{{result.name}}</td>
+                    <tr ng-repeat="result in searchResults">
                         <td>
-                            <a ng-click="addShow(result)"><span class="glyphicon glyphicon-plus"></span></a>
+                          {{result.name}} ({{result.firstAired}})
+                          <p><small>{{result.overview}}</small></p>
+                          </td>
+                        <td>
+                            <a ng-click="addShow(result)" class="btn btn-default btn-fab btn-raised btn-material-bluegrey mdi-content-add"></span></a>
                         </td>
                     </tr>
                     </tbody>
