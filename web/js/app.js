@@ -17,7 +17,7 @@ angular.module('xtv', [
 
   $routeProvider.when('/home', {templateUrl: 'web/partials/home.html', controller: 'HomeCtrl'});
   $routeProvider.when('/shows', {templateUrl: 'web/partials/shows.html', controller: 'ShowsCtrl'});
-  $routeProvider.when('/search', {templateUrl: 'web/partials/search.html', controller: 'SearchCtrl'});
+  $routeProvider.when('/search/:query?', {templateUrl: 'web/partials/search.html', controller: 'SearchCtrl'});
   $routeProvider.when('/downloads', {templateUrl: 'web/partials/downloads.html', controller: 'DownloadsCtrl'});
   $routeProvider.when('/logFile', {templateUrl: 'web/partials/logFile.html', controller: 'LogFileCtrl'});
   $routeProvider.otherwise({redirectTo: '/home'});

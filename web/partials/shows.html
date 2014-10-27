@@ -40,13 +40,13 @@
           <div class="col-sm-12 well">
             <div class="row">
               <div class="col-sm-12">
-                <img src="http://thetvdb.com/banners/graphical/81189-g21.jpg" class="col-sm-12"/>
+                <img ng-src="http://thetvdb.com/banners/{{selectedShow.banner}}" class="col-sm-12"/>
               </div>
 
             </div>
             <div class="row">
               <div class="col-sm-12">
-                <p style="padding-top: 15px;">{{selectedShow.overview}} ff</p>
+                <p style="padding-top: 15px;">{{selectedShow.overview}}</p>
               </div>
             </div>
           </div>
@@ -61,11 +61,11 @@
             <form role="form" name="editShowForm">
                 <div class="form-group">
                     <label for="name">Name:</label>
-                    <input type="text" class="form-control" id="name" placeholder="Name" ng-model="selectedShow.name" required>
+                    <input type="text" class="form-control" id="name" placeholder="Name" ng-model="selectedShow.name" required disabled>
                 </div>
                 <div class="form-group">
                     <label for="tvbdID">TvbdID:</label>
-                    <input type="text" class="form-control" id="tvbdID" placeholder="TvbdID" ng-model="selectedShow.tvbdId" required>
+                    <input type="text" class="form-control" id="tvbdID" placeholder="TvbdID" ng-model="selectedShow.id" required disabled>
                 </div>
                 <div class="form-group">
                     <label for="searchName">Search Name:</label>
@@ -77,7 +77,8 @@
                 </div>
                 <div class="form-group">
                     <div class="col-sm-12">
-                        <button type="submit" class="btn btn-default pull-right">Save</button>
+                        <button type="button" class="btn btn-default pull-right" ng-click="saveShow(selectedShow)">Save</button>
+                        <button type="button" class="btn btn-default pull-right" ng-click="loadEpisodes(selectedShow)">Load Episodes</button>
                     </div>
                 </div>
             </form>
@@ -107,18 +108,47 @@
                         </span>
                     </div>
                 </form>
-                <table class="table">
+                <table class="table" style="display: block; max-height: 450px; overflow-y: scroll">
                     <tr ng-repeat="result in searchResults">
                         <td>
                           {{result.name}} ({{result.firstAired}})
                           <p><small>{{result.overview}}</small></p>
                           </td>
                         <td>
-                            <a ng-click="addShow(result)" class="btn btn-default btn-fab btn-raised btn-material-bluegrey mdi-content-add"></span></a>
+                            <a ng-click="saveShow(result)" class="btn btn-default btn-fab btn-raised btn-material-bluegrey mdi-content-add"></span></a>
                         </td>
                     </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Episodes Modal -->
+<div class="modal fade" id="episodesDialog" tabindex="-1" role="dialog" aria-labelledby="episodesDialogLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="episodesDialogLabel"><span class="glyphicon glyphicon-cog"></span> Episodes for {{selectedShow.name}}</h4>
+            </div>
+            <div class="modal-body" style="max-height: 500px; overflow-y: scroll">
+              <div ng-repeat="(season, episodes) in seasons">
+                <table class="table" >
+                    <tr ng-repeat="episode in episodes">
+                        <td>{{episode.episodeName}}</td>
+                        <td>{{episode.seasonNumber}} x {{episode.episodeNumber}}</td>
+                        <td>{{episode.firstAired}}</td>
+                        <td><a ng-click="searchEpisode(selectedShow, episode)"><i class="mdi-action-search"></i></a></td>
+                    </tr>
+                    </tbody>
+                </table>
+              </div>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>

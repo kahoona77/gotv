@@ -3,7 +3,7 @@
 /* Controllers */
 
 angular.module('xtv.controllers').
-  controller('SearchCtrl', ['$scope', 'msg', '$http', function($scope, msg, $http) {
+  controller('SearchCtrl', ['$scope', 'msg', '$http', '$routeParams', function($scope, msg, $http, $routeParams) {
 
     $scope.query = undefined;
     $scope.packetCount = '';
@@ -38,7 +38,11 @@ angular.module('xtv.controllers').
           msg.error (response.message);
         }
       });
-
     };
+
+    if ($routeParams.query) {
+      $scope.query = $routeParams.query;
+      $scope.search();
+    }
 
   }]);

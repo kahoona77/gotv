@@ -1,58 +1,115 @@
 package handler
 
 import (
-  "encoding/json"
-  "github.com/kahoona77/gotv/domain"
-  "github.com/kahoona77/gotv/tvdb"
-  "net/http"
-  "strings"
+	"encoding/json"
+	"github.com/kahoona77/gotv/domain"
+	"github.com/kahoona77/gotv/tvdb"
+	"log"
+	"net/http"
+	"strings"
 )
 
+// ShowsResult response result
 type ShowsResult struct {
-  Success  bool                `json:"success"`
-  Status   string              `json:"status"`
-  Shows    []domain.Show       `json:"shows,omitempty"`
+	Success  bool                         `json:"success"`
+	Status   string                       `json:"status"`
+	Shows    []domain.Show                `json:"shows,omitempty"`
+	Episodes map[string][]*domain.Episode `json:"episodes,omitempty"`
 }
 
+// ShowsHandler handles show requests
 type ShowsHandler struct {
-  showsRepo   *domain.GoTvRepository
-  tvdb        *tvdb.Client
+	showsRepo *domain.GoTvRepository
+	tvdb      *tvdb.Client
 }
 
+// NewShowsHandler creates a new ShowsHandler
 func NewShowsHandler(showsRepo *domain.GoTvRepository, client *tvdb.Client) *ShowsHandler {
-  h := new(ShowsHandler)
-  h.showsRepo = showsRepo
-  h.tvdb      = client
-  return h
+	h := new(ShowsHandler)
+	h.showsRepo = showsRepo
+	h.tvdb = client
+	return h
 }
 
+// HandleRequests does what it says
 func (sh *ShowsHandler) HandleRequests(w http.ResponseWriter, r *http.Request) {
-  url := r.URL.String()
+	url := r.URL.String()
 
-  switch {
-  case url == "/shows/load":
-    sh.load(w, r)
-  case strings.HasPrefix(url,"/shows/search"):
-    sh.search(w, r)
-  }
+	switch {
+	case url == "/shows/load":
+		sh.load(w, r)
+	case url == "/shows/save":
+		sh.save(w, r)
+	case url == "/shows/delete":
+		sh.delete(w, r)
+	case strings.HasPrefix(url, "/shows/search"):
+		sh.search(w, r)
+	case strings.HasPrefix(url, "/shows/loadEpisodes"):
+		sh.loadEpisodes(w, r)
+	}
 
-  return
+	return
 }
 
-func (sh *ShowsHandler) load (w http.ResponseWriter, r *http.Request) {
-  var results []domain.Show
-  sh.showsRepo.All(&results)
+func (sh *ShowsHandler) load(w http.ResponseWriter, r *http.Request) {
+	var results []domain.Show
+	sh.showsRepo.All(&results)
 
-  data := ShowsResult{true, "ok", results}
-  json.NewEncoder(w).Encode(data)
+	data := ShowsResult{true, "ok", results, nil}
+	json.NewEncoder(w).Encode(data)
 }
 
-func (sh *ShowsHandler) search (w http.ResponseWriter, r *http.Request) {
-  params := r.URL.Query()
-  query := params["query"][0]
+func (sh *ShowsHandler) save(w http.ResponseWriter, r *http.Request) {
+	var show domain.Show
+	data := ShowsResult{true, "ok", nil, nil}
+	if readJson(r, "data", &show) {
 
-  results := sh.tvdb.SearchShow (query)
+		_, err := sh.showsRepo.Save(show.Id, &show)
 
-  data := ShowsResult{true, "ok", results}
-  json.NewEncoder(w).Encode(data)
+		if err != nil {
+			data.Success = false
+			data.Status = "error"
+		}
+	}
+
+	json.NewEncoder(w).Encode(data)
+}
+
+func (sh *ShowsHandler) delete(w http.ResponseWriter, r *http.Request) {
+	var show domain.Show
+	data := ShowsResult{true, "ok", nil, nil}
+	if readJson(r, "data", &show) {
+		err := sh.showsRepo.Remove(show.Id)
+
+		if err != nil {
+			log.Printf("%v", err)
+			data.Success = false
+			data.Status = "error"
+		}
+	}
+
+	json.NewEncoder(w).Encode(data)
+}
+
+func (sh *ShowsHandler) search(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	query := params["query"][0]
+
+	results := sh.tvdb.SearchShow(query)
+
+	data := ShowsResult{true, "ok", results, nil}
+	json.NewEncoder(w).Encode(data)
+}
+
+func (sh *ShowsHandler) loadEpisodes(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	showID := params["showId"][0]
+
+	results := sh.tvdb.LoadEpisodes(showID)
+
+	data := ShowsResult{true, "ok", nil, results}
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		log.Printf("%v", err)
+	}
 }
