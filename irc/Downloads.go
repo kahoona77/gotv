@@ -3,6 +3,8 @@ package irc
 import (
 	"github.com/kahoona77/gotv/domain"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -95,7 +97,15 @@ func (dcc *DccService) completeDownload(file string) {
 		log.Printf("Download completed '%v'", download.File)
 		download.Status = "COMPLETE"
 
-		//TODO move file to destination
+		//move file to destination
+		srcFile := filepath.FromSlash(dcc.settings.TempDir + "/" + file)
+		destFile := filepath.FromSlash(dcc.settings.DownloadDir + "/" + file)
+		err := os.Rename(srcFile, destFile)
+		if err != nil {
+			log.Printf("Error while moving file to destination: %s", err)
+		}
+
+		//start smart episode matching
 
 	} else {
 		log.Printf("download not found: %v in %v", file, dcc.downloads)

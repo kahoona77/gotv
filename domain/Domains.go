@@ -56,13 +56,13 @@ func (this *Packet) SetId(id string) {
 
 // Settings
 type XtvSettings struct {
-	Id                  string `json:"id" bson:"_id"`
-	Nick                string `json:"nick" bson:"nick"`
-	TempDir             string `json:"tempDir" bson:"tempDir"`
-	DownloadDir         string `json:"downloadDir" bson:"downloadDir"`
-	PostDownloadTrigger string `json:"postDownloadTrigger" bson:"postDownloadTrigger"`
-	LogFile             string `json:"logFile" bson:"logFile"`
-	MaxDownStream       int    `json:"maxDownStream" bson:"maxDownStream"`
+	Id            string `json:"id" bson:"_id"`
+	Nick          string `json:"nick" bson:"nick"`
+	TempDir       string `json:"tempDir" bson:"tempDir"`
+	DownloadDir   string `json:"downloadDir" bson:"downloadDir"`
+	ShowsFolder   string `json:"showsFolder" bson:"showsFolder"`
+	LogFile       string `json:"logFile" bson:"logFile"`
+	MaxDownStream int    `json:"maxDownStream" bson:"maxDownStream"`
 }
 
 func (this *XtvSettings) SetId(id string) {
