@@ -84,7 +84,7 @@ func main() {
 
 	log.Printf("XTV (Go) started port %d\n", *port)
 	fmt.Printf("XTV (Go) started port %d\n", *port)
-	addr := fmt.Sprintf("127.0.0.1:%d", *port)
+	addr := fmt.Sprintf(":%d", *port)
 	// this call blocks -- the progam runs here forever
 	http.Handle("/", r)
 	err = http.ListenAndServe(addr, nil)
