@@ -5,6 +5,7 @@ import (
 	"labix.org/v2/mgo/bson"
 	"log"
 	"os"
+	"fmt"
 	"net"
 	"path/filepath"
 	"regexp"
@@ -52,7 +53,7 @@ func (parser *ShowParser) MoveEpisode(file string, settings *domain.XtvSettings)
 		// create output file
 		fileEnding := file[strings.LastIndex(file, "."):]
 		destinationFolder := settings.ShowsFolder + "/" + show.Folder + "/Season " + strconv.Itoa(int(episode.SeasonNumber)) + "/"
-		fileName := show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + strconv.Itoa(int(episode.EpisodeNumber)) + " - " + episode.Name
+		fileName := show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + fmt.Sprintf("%0.2d", episode.EpisodeNumber) + " - " + episode.Name
 
 		//move epsiode to destination
 		srcFile := filepath.FromSlash(file)
@@ -60,6 +61,8 @@ func (parser *ShowParser) MoveEpisode(file string, settings *domain.XtvSettings)
 		err := os.Rename(srcFile, destFile)
 		if err != nil {
 			log.Printf("Error while moving epsiode to destination: %s", err)
+		} else {
+			log.Printf("Moved Episode '%s' to folder '%s'", fileName, destinationFolder)
 		}
 	}
 }
