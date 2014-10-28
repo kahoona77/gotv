@@ -6,6 +6,7 @@ import (
 	"github.com/efarrer/iothrottler"
 	irc "github.com/fluffle/goirc/client"
 	"github.com/kahoona77/gotv/domain"
+	"github.com/kahoona77/gotv/tvdb"
 	"io"
 	"log"
 	"net"
@@ -35,6 +36,7 @@ type DccUpdate struct {
 type DccService struct {
 	client     *IrcClient
 	settings   *domain.XtvSettings
+	parser     *tvdb.ShowParser
 	downloads  map[string]*Download
 	resumes    map[string]*DccFileEvent
 	updateChan chan DccUpdate
@@ -42,10 +44,11 @@ type DccService struct {
 }
 
 // NewDccService creates a new DccService
-func NewDccService(client *IrcClient) *DccService {
+func NewDccService(client *IrcClient, parser *tvdb.ShowParser) *DccService {
 	dcc := new(DccService)
 	dcc.client = client
 	dcc.settings = client.Settings
+	dcc.parser = parser
 	dcc.downloads = make(map[string]*Download)
 	dcc.resumes = make(map[string]*DccFileEvent)
 	dcc.updateChan = make(chan DccUpdate)
@@ -268,6 +271,6 @@ func (dcc *DccService) setDownloadLimit(maxDownStream int) {
 		log.Printf("download unlimited")
 	} else {
 		dcc.connPool.SetBandwidth(iothrottler.Kbps * iothrottler.Bandwidth(maxDownStream*8))
-		log.Printf("currentDownloadLimit: %v", iothrottler.Kbps * iothrottler.Bandwidth(maxDownStream*8))
+		log.Printf("currentDownloadLimit: %v", iothrottler.Kbps*iothrottler.Bandwidth(maxDownStream*8))
 	}
 }

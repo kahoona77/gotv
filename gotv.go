@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/kahoona77/gotv/tvdb"
 	"github.com/kahoona77/gotv/domain"
 	"github.com/kahoona77/gotv/handler"
 	"github.com/kahoona77/gotv/irc"
+	"github.com/kahoona77/gotv/tvdb"
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"log"
@@ -55,16 +55,19 @@ func main() {
 	settingsRepo.FindFirst(&settings)
 	settings.LogFile = *logFile
 
+	//TVDB-Client
+	tvdbClient := tvdb.NewClient()
+
+	//Parser
+	parser := tvdb.NewShowParser(showsRepo, tvdbClient)
+
 	//IrcClient
 	ircClient := irc.NewClient(packetsRepo, serverRepo, &settings)
 
 	//DccServie
-	dccService := irc.NewDccService(ircClient)
-	dccService.UpdateSettings (&settings)
+	dccService := irc.NewDccService(ircClient, parser)
+	dccService.UpdateSettings(&settings)
 	ircClient.DccService = dccService
-
-	//TVDB-Client
-	tvdb := tvdb.NewClient()
 
 	//Handlers
 	dataHandler := handler.NewDataHandler(serverRepo, settingsRepo, dccService)
@@ -73,7 +76,7 @@ func main() {
 	packetsHandler := handler.NewPacketsHandler(packetsRepo)
 	r.PathPrefix("/packets/").HandlerFunc(packetsHandler.HandleRequests)
 
-	showssHandler := handler.NewShowsHandler(showsRepo, tvdb)
+	showssHandler := handler.NewShowsHandler(showsRepo, tvdbClient)
 	r.PathPrefix("/shows/").HandlerFunc(showssHandler.HandleRequests)
 
 	ircHandler := handler.NewIrcHandler(ircClient)
