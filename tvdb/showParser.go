@@ -64,7 +64,7 @@ func (parser *ShowParser) MoveEpisode(file string, settings *domain.XtvSettings)
 func (parser *ShowParser) getShowData(info *ShowInfo) (*domain.Show, *domain.Episode) {
 	// find show
 	var shows []domain.Show
-	query := bson.M{"name": info.Name}
+	query := bson.M{"searchName": info.Name}
 	err := parser.showsRepo.FindWithQuery(&query, &shows)
 	if err != nil || len(shows) <= 0 {
 		log.Printf("could not find show: %v", info.Name)
