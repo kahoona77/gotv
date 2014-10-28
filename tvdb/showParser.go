@@ -45,7 +45,7 @@ func (parser *ShowParser) MoveEpisode(file string, settings *domain.XtvSettings)
 	// create output file
 	fileEnding := file[strings.LastIndex(file, "."):]
 	destinationFolder := settings.ShowsFolder + "/" + show.Folder + "/Season " + strconv.Itoa(int(episode.SeasonNumber)) + "/"
-	fileName := episode.Name + " " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + strconv.Itoa(int(episode.EpisodeNumber))
+	fileName := show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + strconv.Itoa(int(episode.EpisodeNumber)) + " - " + episode.Name 
 
 	//move epsiode to destination
 	srcFile := filepath.FromSlash(file)
