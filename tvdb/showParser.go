@@ -42,10 +42,15 @@ func (parser *ShowParser) MoveEpisode(file string, settings *domain.XtvSettings)
 
 	show, episode := parser.getShowData(info)
 
+	if show == nil || episode == nil {
+		//error
+		return
+	}
+
 	// create output file
 	fileEnding := file[strings.LastIndex(file, "."):]
 	destinationFolder := settings.ShowsFolder + "/" + show.Folder + "/Season " + strconv.Itoa(int(episode.SeasonNumber)) + "/"
-	fileName := show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + strconv.Itoa(int(episode.EpisodeNumber)) + " - " + episode.Name 
+	fileName := show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + strconv.Itoa(int(episode.EpisodeNumber)) + " - " + episode.Name
 
 	//move epsiode to destination
 	srcFile := filepath.FromSlash(file)
@@ -61,7 +66,7 @@ func (parser *ShowParser) getShowData(info *ShowInfo) (*domain.Show, *domain.Epi
 	var shows []domain.Show
 	query := bson.M{"name": info.Name}
 	err := parser.showsRepo.FindWithQuery(&query, &shows)
-	if err != nil {
+	if err != nil || len(shows) <= 0 {
 		log.Printf("could not find show: %v", info.Name)
 		return nil, nil
 	}
