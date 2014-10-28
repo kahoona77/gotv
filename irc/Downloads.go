@@ -98,7 +98,8 @@ func (dcc *DccService) completeDownload(file string) {
 		download.Status = "COMPLETE"
 
 		//move file to destination
-		srcFile := filepath.FromSlash(dcc.settings.TempDir + "/" + file)
+		absoluteFile := dcc.settings.TempDir + "/" + file
+		srcFile := filepath.FromSlash(absoluteFile)
 		destFile := filepath.FromSlash(dcc.settings.DownloadDir + "/" + file)
 		err := os.Rename(srcFile, destFile)
 		if err != nil {
@@ -106,6 +107,7 @@ func (dcc *DccService) completeDownload(file string) {
 		}
 
 		//start smart episode matching
+		dcc.parser.MoveEpisode (absoluteFile, dcc.settings)
 
 	} else {
 		log.Printf("download not found: %v in %v", file, dcc.downloads)
