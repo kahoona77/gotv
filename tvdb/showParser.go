@@ -5,6 +5,7 @@ import (
 	"labix.org/v2/mgo/bson"
 	"log"
 	"os"
+	"net"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -40,24 +41,26 @@ func NewShowParser(showsRepo *domain.GoTvRepository, client *Client) *ShowParser
 func (parser *ShowParser) MoveEpisode(file string, settings *domain.XtvSettings) {
 	info := parser.parseShow(file)
 
-	show, episode := parser.getShowData(info)
+	if info != nil {
+		show, episode := parser.getShowData(info)
 
-	if show == nil || episode == nil {
-		//error
-		return
-	}
+		if show == nil || episode == nil {
+			//error
+			return
+		}
 
-	// create output file
-	fileEnding := file[strings.LastIndex(file, "."):]
-	destinationFolder := settings.ShowsFolder + "/" + show.Folder + "/Season " + strconv.Itoa(int(episode.SeasonNumber)) + "/"
-	fileName := show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + strconv.Itoa(int(episode.EpisodeNumber)) + " - " + episode.Name
+		// create output file
+		fileEnding := file[strings.LastIndex(file, "."):]
+		destinationFolder := settings.ShowsFolder + "/" + show.Folder + "/Season " + strconv.Itoa(int(episode.SeasonNumber)) + "/"
+		fileName := show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + strconv.Itoa(int(episode.EpisodeNumber)) + " - " + episode.Name
 
-	//move epsiode to destination
-	srcFile := filepath.FromSlash(file)
-	destFile := filepath.FromSlash(destinationFolder + fileName + fileEnding)
-	err := os.Rename(srcFile, destFile)
-	if err != nil {
-		log.Printf("Error while moving epsiode to destination: %s", err)
+		//move epsiode to destination
+		srcFile := filepath.FromSlash(file)
+		destFile := filepath.FromSlash(destinationFolder + fileName + fileEnding)
+		err := os.Rename(srcFile, destFile)
+		if err != nil {
+			log.Printf("Error while moving epsiode to destination: %s", err)
+		}
 	}
 }
 
@@ -108,8 +111,45 @@ func (parser *ShowParser) parseShow(absoluteFile string) *ShowInfo {
 			info.Name = strings.Replace(result[1], ".", " ", -1)
 			info.Season, _ = strconv.Atoi(result[2])
 			info.Episode, _ = strconv.Atoi(result[3])
+		} else {
+			return nil
 		}
 	}
 
 	return info
+}
+
+func (parser *ShowParser) GetTvdbClient () *Client{
+	return parser.tvdb
+}
+
+func (parser *ShowParser) UpdateEpisodes (settings *domain.XtvSettings) {
+	// iterate over files in downlod-Dir
+	err := filepath.Walk(settings.DownloadDir, func (file string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			parser.MoveEpisode (file, settings)
+		}
+	  return nil
+	})
+	if err != nil {
+		log.Printf ("Error while updating episodes: %v", err)
+	}
+
+	UpdateKodi(settings)
+}
+
+func UpdateKodi (settings *domain.XtvSettings) {
+	//connect
+	conn, err := net.Dial("tcp", settings.KodiAddress)
+	if err != nil {
+		log.Printf("Error while connecting to Kodi: %v", err)
+		return
+	}
+	defer conn.Close()
+
+	msg := `{"id":1,"method":"VideoLibrary.Scan","params":[],"jsonrpc":"2.0"}`
+	// json.NewEncoder(conn).Encode(data)
+	if _, err = conn.Write([]byte(msg)); err != nil {
+		log.Printf("Error while sending update command to Kodi: %s", err)
+	}
 }

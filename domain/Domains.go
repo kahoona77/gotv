@@ -61,6 +61,7 @@ type XtvSettings struct {
 	TempDir       string `json:"tempDir" bson:"tempDir"`
 	DownloadDir   string `json:"downloadDir" bson:"downloadDir"`
 	ShowsFolder   string `json:"showsFolder" bson:"showsFolder"`
+	KodiAddress   string `json:"kodiAddress" bson:"kodiAddress"`
 	LogFile       string `json:"logFile" bson:"logFile"`
 	MaxDownStream int    `json:"maxDownStream" bson:"maxDownStream"`
 }

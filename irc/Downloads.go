@@ -98,9 +98,9 @@ func (dcc *DccService) completeDownload(file string) {
 		download.Status = "COMPLETE"
 
 		//move file to destination
-		absoluteFile := dcc.settings.TempDir + "/" + file
-		srcFile := filepath.FromSlash(absoluteFile)
-		destFile := filepath.FromSlash(dcc.settings.DownloadDir + "/" + file)
+		srcFile := filepath.FromSlash(dcc.settings.TempDir + "/" + file)
+		absoluteFile := dcc.settings.DownloadDir + "/" + file
+		destFile := filepath.FromSlash(absoluteFile)
 		err := os.Rename(srcFile, destFile)
 		if err != nil {
 			log.Printf("Error while moving file to destination: %s", err)

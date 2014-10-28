@@ -20,14 +20,16 @@ type ShowsResult struct {
 // ShowsHandler handles show requests
 type ShowsHandler struct {
 	showsRepo *domain.GoTvRepository
-	tvdb      *tvdb.Client
+	parser    *tvdb.ShowParser
+	settings  *domain.XtvSettings
 }
 
 // NewShowsHandler creates a new ShowsHandler
-func NewShowsHandler(showsRepo *domain.GoTvRepository, client *tvdb.Client) *ShowsHandler {
+func NewShowsHandler(showsRepo *domain.GoTvRepository, parser *tvdb.ShowParser, settings *domain.XtvSettings) *ShowsHandler {
 	h := new(ShowsHandler)
 	h.showsRepo = showsRepo
-	h.tvdb = client
+	h.parser = parser
+	h.settings = settings
 	return h
 }
 
@@ -42,6 +44,8 @@ func (sh *ShowsHandler) HandleRequests(w http.ResponseWriter, r *http.Request) {
 		sh.save(w, r)
 	case url == "/shows/delete":
 		sh.delete(w, r)
+	case url == "/shows/updateEpisodes":
+		sh.updateEpisodes(w, r)
 	case strings.HasPrefix(url, "/shows/search"):
 		sh.search(w, r)
 	case strings.HasPrefix(url, "/shows/loadEpisodes"):
@@ -95,7 +99,7 @@ func (sh *ShowsHandler) search(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	query := params["query"][0]
 
-	results := sh.tvdb.SearchShow(query)
+	results := sh.parser.GetTvdbClient().SearchShow(query)
 
 	data := ShowsResult{true, "ok", results, nil}
 	json.NewEncoder(w).Encode(data)
@@ -105,11 +109,17 @@ func (sh *ShowsHandler) loadEpisodes(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	showID := params["showId"][0]
 
-	results := sh.tvdb.LoadEpisodes(showID)
+	results := sh.parser.GetTvdbClient().LoadEpisodes(showID)
 
 	data := ShowsResult{true, "ok", nil, results}
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
 		log.Printf("%v", err)
 	}
+}
+
+func (sh *ShowsHandler) updateEpisodes(w http.ResponseWriter, r *http.Request) {
+	sh.parser.UpdateEpisodes (sh.settings)
+	data := ShowsResult{true, "ok", nil, nil}
+	json.NewEncoder(w).Encode(data)
 }

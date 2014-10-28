@@ -76,7 +76,7 @@ func main() {
 	packetsHandler := handler.NewPacketsHandler(packetsRepo)
 	r.PathPrefix("/packets/").HandlerFunc(packetsHandler.HandleRequests)
 
-	showssHandler := handler.NewShowsHandler(showsRepo, tvdbClient)
+	showssHandler := handler.NewShowsHandler(showsRepo, parser, &settings)
 	r.PathPrefix("/shows/").HandlerFunc(showssHandler.HandleRequests)
 
 	ircHandler := handler.NewIrcHandler(ircClient)

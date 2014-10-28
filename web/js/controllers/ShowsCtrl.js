@@ -99,6 +99,16 @@ angular.module('xtv.controllers').
       $location.path ('/search/' + query);
     };
 
+    $scope.updateEpisodes = function () {
+     $http.get('/shows/updateEpisodes').success(function(response){
+        if (response.status == 'ok') {
+          msg.error ("Updating episodes started...");
+        } else {
+          msg.error (response.message);
+        }
+      });
+    };
+
 
 
   }]);
