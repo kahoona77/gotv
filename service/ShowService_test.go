@@ -1,11 +1,11 @@
-package tvdb
+package service
 
 import (
 	"testing"
 )
 
 func TestParseShow(t *testing.T) {
-	parser := NewShowParser(nil, nil)
+	parser := NewShowService(nil)
 	info := parser.parseShow("d:/test/downloads/Breaking.Bad.S05E15.HDTV.x264.mkv")
 	checkInfo(info, t)
 

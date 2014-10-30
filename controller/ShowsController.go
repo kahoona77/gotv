@@ -1,9 +1,9 @@
-package handler
+package controller
 
 import (
 	"encoding/json"
 	"github.com/kahoona77/gotv/domain"
-	"github.com/kahoona77/gotv/tvdb"
+	"github.com/kahoona77/gotv/service"
 	"log"
 	"net/http"
 	"strings"
@@ -17,58 +17,47 @@ type ShowsResult struct {
 	Episodes map[string][]*domain.Episode `json:"episodes,omitempty"`
 }
 
-// ShowsHandler handles show requests
-type ShowsHandler struct {
-	showsRepo *domain.GoTvRepository
-	parser    *tvdb.ShowParser
-	settings  *domain.XtvSettings
-}
-
-// NewShowsHandler creates a new ShowsHandler
-func NewShowsHandler(showsRepo *domain.GoTvRepository, parser *tvdb.ShowParser, settings *domain.XtvSettings) *ShowsHandler {
-	h := new(ShowsHandler)
-	h.showsRepo = showsRepo
-	h.parser = parser
-	h.settings = settings
-	return h
+// ShowsController handles show requests
+type ShowsController struct {
+	*service.Context
 }
 
 // HandleRequests does what it says
-func (sh *ShowsHandler) HandleRequests(w http.ResponseWriter, r *http.Request) {
+func (sc *ShowsController) HandleRequests(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.String()
 
 	switch {
 	case url == "/shows/load":
-		sh.load(w, r)
+		sc.load(w, r)
 	case url == "/shows/save":
-		sh.save(w, r)
+		sc.save(w, r)
 	case url == "/shows/delete":
-		sh.delete(w, r)
+		sc.delete(w, r)
 	case url == "/shows/updateEpisodes":
-		sh.updateEpisodes(w, r)
+		sc.updateEpisodes(w, r)
 	case strings.HasPrefix(url, "/shows/search"):
-		sh.search(w, r)
+		sc.search(w, r)
 	case strings.HasPrefix(url, "/shows/loadEpisodes"):
-		sh.loadEpisodes(w, r)
+		sc.loadEpisodes(w, r)
 	}
 
 	return
 }
 
-func (sh *ShowsHandler) load(w http.ResponseWriter, r *http.Request) {
+func (sc *ShowsController) load(w http.ResponseWriter, r *http.Request) {
 	var results []domain.Show
-	sh.showsRepo.All(&results)
+	sc.ShowsRepo.All(&results)
 
 	data := ShowsResult{true, "ok", results, nil}
 	json.NewEncoder(w).Encode(data)
 }
 
-func (sh *ShowsHandler) save(w http.ResponseWriter, r *http.Request) {
+func (sc *ShowsController) save(w http.ResponseWriter, r *http.Request) {
 	var show domain.Show
 	data := ShowsResult{true, "ok", nil, nil}
 	if readJson(r, "data", &show) {
 
-		_, err := sh.showsRepo.Save(show.Id, &show)
+		_, err := sc.ShowsRepo.Save(show.Id, &show)
 
 		if err != nil {
 			data.Success = false
@@ -79,11 +68,11 @@ func (sh *ShowsHandler) save(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func (sh *ShowsHandler) delete(w http.ResponseWriter, r *http.Request) {
+func (sc *ShowsController) delete(w http.ResponseWriter, r *http.Request) {
 	var show domain.Show
 	data := ShowsResult{true, "ok", nil, nil}
 	if readJson(r, "data", &show) {
-		err := sh.showsRepo.Remove(show.Id)
+		err := sc.ShowsRepo.Remove(show.Id)
 
 		if err != nil {
 			log.Printf("%v", err)
@@ -95,21 +84,21 @@ func (sh *ShowsHandler) delete(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func (sh *ShowsHandler) search(w http.ResponseWriter, r *http.Request) {
+func (sc *ShowsController) search(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	query := params["query"][0]
 
-	results := sh.parser.GetTvdbClient().SearchShow(query)
+	results := sc.ShowService.SearchShow(query)
 
 	data := ShowsResult{true, "ok", results, nil}
 	json.NewEncoder(w).Encode(data)
 }
 
-func (sh *ShowsHandler) loadEpisodes(w http.ResponseWriter, r *http.Request) {
+func (sc *ShowsController) loadEpisodes(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	showID := params["showId"][0]
 
-	results := sh.parser.GetTvdbClient().LoadEpisodes(showID)
+	results := sc.ShowService.LoadEpisodes(showID)
 
 	data := ShowsResult{true, "ok", nil, results}
 	err := json.NewEncoder(w).Encode(data)
@@ -118,8 +107,8 @@ func (sh *ShowsHandler) loadEpisodes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (sh *ShowsHandler) updateEpisodes(w http.ResponseWriter, r *http.Request) {
-	sh.parser.UpdateEpisodes (sh.settings)
+func (sc *ShowsController) updateEpisodes(w http.ResponseWriter, r *http.Request) {
+	sc.ShowService.UpdateEpisodes (sc.GetSettings())
 	data := ShowsResult{true, "ok", nil, nil}
 	json.NewEncoder(w).Encode(data)
 }

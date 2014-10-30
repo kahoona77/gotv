@@ -1,4 +1,4 @@
-package irc
+package service
 
 import (
 	"bufio"
@@ -6,7 +6,6 @@ import (
 	"github.com/efarrer/iothrottler"
 	irc "github.com/fluffle/goirc/client"
 	"github.com/kahoona77/gotv/domain"
-	"github.com/kahoona77/gotv/tvdb"
 	"io"
 	"log"
 	"net"
@@ -34,9 +33,7 @@ type DccUpdate struct {
 
 // DccService -
 type DccService struct {
-	client     *IrcClient
-	settings   *domain.XtvSettings
-	parser     *tvdb.ShowParser
+	*Context
 	downloads  map[string]*Download
 	resumes    map[string]*DccFileEvent
 	updateChan chan DccUpdate
@@ -44,11 +41,9 @@ type DccService struct {
 }
 
 // NewDccService creates a new DccService
-func NewDccService(client *IrcClient, parser *tvdb.ShowParser) *DccService {
+func NewDccService(ctx *Context) *DccService {
 	dcc := new(DccService)
-	dcc.client = client
-	dcc.settings = client.Settings
-	dcc.parser = parser
+	dcc.Context = ctx
 	dcc.downloads = make(map[string]*Download)
 	dcc.resumes = make(map[string]*DccFileEvent)
 	dcc.updateChan = make(chan DccUpdate)
@@ -62,20 +57,20 @@ func NewDccService(client *IrcClient, parser *tvdb.ShowParser) *DccService {
 func (dcc *DccService) handleDCC(conn *irc.Conn, line *irc.Line) {
 	request := strings.Split(line.Args[2], " ")
 	ctcpType := line.Args[0]
-
+	settings := dcc.GetSettings ()
 	if ctcpType == "DCC" {
 		cmd := request[0]
 		if cmd == "SEND" {
-			dcc.handleSend(request, conn, line)
+			dcc.handleSend(request, conn, line, settings)
 		} else if cmd == "ACCEPT" {
-			dcc.handleAccept(request)
+			dcc.handleAccept(request, settings)
 		} else {
 			log.Printf("received unmatched DCC command: %v", cmd)
 		}
 	}
 }
 
-func (dcc *DccService) handleSend(request []string, conn *irc.Conn, line *irc.Line) {
+func (dcc *DccService) handleSend(request []string, conn *irc.Conn, line *irc.Line, settings *domain.XtvSettings) {
 	fileName := request[1]
 	addrInt, _ := strconv.ParseInt(request[2], 0, 64)
 	address := inetNtoa(addrInt)
@@ -85,7 +80,7 @@ func (dcc *DccService) handleSend(request []string, conn *irc.Conn, line *irc.Li
 	log.Printf("received SEND - file: %v, addr: %v, port: %v, size:%v\n", fileName, address.String(), port, size)
 	fileEvent := DccFileEvent{"SEND", fileName, address, port, size}
 
-	resume, startPos := dcc.fileExists(&fileEvent)
+	resume, startPos := dcc.fileExists(&fileEvent, settings)
 
 	if resume {
 		// file already exists -> send resume request
@@ -96,11 +91,11 @@ func (dcc *DccService) handleSend(request []string, conn *irc.Conn, line *irc.Li
 		dcc.resumes[fileEvent.FileName] = &fileEvent
 	} else {
 		// This is a new file start from beginning
-		go dcc.startDownload(&fileEvent, startPos)
+		go dcc.startDownload(&fileEvent, startPos, settings)
 	}
 }
 
-func (dcc *DccService) handleAccept(request []string) {
+func (dcc *DccService) handleAccept(request []string, settings *domain.XtvSettings) {
 	log.Printf("received ACCEPT")
 
 	fileName := request[1]
@@ -120,11 +115,11 @@ func (dcc *DccService) handleAccept(request []string) {
 		return
 	}
 
-	go dcc.startDownload(fileEvent, position)
+	go dcc.startDownload(fileEvent, position, settings)
 }
 
-func (dcc *DccService) startDownload(fileEvent *DccFileEvent, startPos int64) {
-	file := dcc.getTempFile(fileEvent)
+func (dcc *DccService) startDownload(fileEvent *DccFileEvent, startPos int64, settings *domain.XtvSettings) {
+	file := dcc.getTempFile(fileEvent, settings)
 
 	// set start position
 	var totalBytes int64
@@ -209,8 +204,8 @@ func (dcc *DccService) startDownload(fileEvent *DccFileEvent, startPos int64) {
 
 }
 
-func (dcc *DccService) getTempFile(fileEvent *DccFileEvent) *os.File {
-	filename := filepath.FromSlash(dcc.settings.TempDir + "/" + fileEvent.FileName)
+func (dcc *DccService) getTempFile(fileEvent *DccFileEvent, settings *domain.XtvSettings) *os.File {
+	filename := filepath.FromSlash(settings.TempDir + "/" + fileEvent.FileName)
 	_, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		fo, err := os.Create(filename)
@@ -227,8 +222,8 @@ func (dcc *DccService) getTempFile(fileEvent *DccFileEvent) *os.File {
 	}
 }
 
-func (dcc *DccService) fileExists(fileEvent *DccFileEvent) (bool, int64) {
-	filename := filepath.FromSlash(dcc.settings.TempDir + "/" + fileEvent.FileName)
+func (dcc *DccService) fileExists(fileEvent *DccFileEvent, settings *domain.XtvSettings) (bool, int64) {
+	filename := filepath.FromSlash(settings.TempDir + "/" + fileEvent.FileName)
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false, 0
@@ -253,19 +248,9 @@ func inetNtoa(ipnr int64) net.IP {
 	return net.IPv4(bytes[3], bytes[2], bytes[1], bytes[0])
 }
 
-// UpdateSettings - update the settings
-func (dcc *DccService) UpdateSettings(settings *domain.XtvSettings) {
-	dcc.settings = settings
-	dcc.setDownloadLimit(settings.MaxDownStream)
-}
-
-// GetSettings - get the settings
-func (dcc *DccService) GetSettings() *domain.XtvSettings {
-	return dcc.settings
-}
 
 // SetDownloadLimit - Sets the downloadlimit in KiloByte / Second
-func (dcc *DccService) setDownloadLimit(maxDownStream int) {
+func (dcc *DccService) SetDownloadLimit(maxDownStream int) {
 	if maxDownStream <= 0 {
 		dcc.connPool.SetBandwidth(iothrottler.Unlimited)
 		log.Printf("download unlimited")

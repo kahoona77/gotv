@@ -1,4 +1,4 @@
-package irc
+package service
 
 import (
 	"github.com/kahoona77/gotv/domain"
@@ -29,7 +29,7 @@ func DownloadFromPacket(packet *domain.Packet) *Download {
 }
 
 func (dcc *DccService) DownloadPacket(packet *domain.Packet) {
-	bot := dcc.client.GetBot(packet.Server)
+	bot := dcc.IrcClient.GetBot(packet.Server)
 	download := DownloadFromPacket(packet)
 	dcc.downloads[download.Id] = download
 	bot.StartDownload(download)
@@ -45,7 +45,7 @@ func (dcc *DccService) ListDownloads() []*Download {
 }
 
 func (dcc *DccService) StopDownload(download *Download) {
-	bot := dcc.client.GetBot(download.Server)
+	bot := dcc.IrcClient.GetBot(download.Server)
 	bot.StopDownload(download)
 }
 
@@ -63,7 +63,7 @@ func (dcc *DccService) ResumeDownload(parsedDownload *Download) {
 	download := dcc.downloads[parsedDownload.Id]
 	if download != nil {
 		if download.Status != "RUNNING" {
-			bot := dcc.client.GetBot(download.Server)
+			bot := dcc.IrcClient.GetBot(download.Server)
 			bot.StartDownload(download)
 		}
 	}
@@ -98,8 +98,9 @@ func (dcc *DccService) completeDownload(file string) {
 		download.Status = "COMPLETE"
 
 		//move file to destination
-		srcFile := filepath.FromSlash(dcc.settings.TempDir + "/" + file)
-		absoluteFile := dcc.settings.DownloadDir + "/" + file
+		settings := dcc.GetSettings()
+		srcFile := filepath.FromSlash(settings.TempDir + "/" + file)
+		absoluteFile := settings.DownloadDir + "/" + file
 		destFile := filepath.FromSlash(absoluteFile)
 		err := os.Rename(srcFile, destFile)
 		if err != nil {
@@ -107,7 +108,7 @@ func (dcc *DccService) completeDownload(file string) {
 		}
 
 		//start smart episode matching
-		dcc.parser.MoveEpisode (absoluteFile, dcc.settings)
+		dcc.ShowService.MoveEpisode (absoluteFile, settings)
 
 	} else {
 		log.Printf("download not found: %v in %v", file, dcc.downloads)

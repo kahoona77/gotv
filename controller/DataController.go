@@ -1,9 +1,9 @@
-package handler
+package controller
 
 import (
 	"encoding/json"
 	"github.com/kahoona77/gotv/domain"
-	"github.com/kahoona77/gotv/irc"
+	"github.com/kahoona77/gotv/service"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,44 +17,34 @@ type DataResult struct {
 	LogFile  string              `json:"logFile,omitempty"`
 }
 
-type DataHandler struct {
-	ServerRepo   *domain.GoTvRepository
-	SettingsRepo *domain.GoTvRepository
-	DccService   *irc.DccService
+type DataController struct {
+	*service.Context
 }
 
-func NewDataHandler(serverRepo *domain.GoTvRepository, settingsRepo *domain.GoTvRepository, dccService *irc.DccService) *DataHandler {
-	h := new(DataHandler)
-	h.ServerRepo = serverRepo
-	h.SettingsRepo = settingsRepo
-	h.DccService = dccService
-	return h
-}
-
-func (dh DataHandler) HandleRequests(w http.ResponseWriter, r *http.Request) {
+func (dc DataController) HandleRequests(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.String()
 
 	switch {
 	case url == "/data/loadServers":
-		dh.loadServers(w, r)
+		dc.loadServers(w, r)
 	case url == "/data/saveServer":
-		dh.saveServer(w, r)
+		dc.saveServer(w, r)
 	case url == "/data/deleteServer":
-		dh.deleteServer(w, r)
+		dc.deleteServer(w, r)
 	case url == "/data/loadSettings":
-		dh.loadSettings(w, r)
+		dc.loadSettings(w, r)
 	case url == "/data/saveSettings":
-		dh.saveSettings(w, r)
+		dc.saveSettings(w, r)
 	case url == "/data/loadLogFile":
-		dh.loadLogFile(w, r)
+		dc.loadLogFile(w, r)
 	case url == "/data/clearLogFile":
-		dh.clearLogFile(w, r)
+		dc.clearLogFile(w, r)
 	}
 
 	return
 }
 
-func (dh DataHandler) saveServer(w http.ResponseWriter, r *http.Request) {
+func (dc DataController) saveServer(w http.ResponseWriter, r *http.Request) {
 	var (
 		server domain.Server
 		err    error
@@ -62,7 +52,7 @@ func (dh DataHandler) saveServer(w http.ResponseWriter, r *http.Request) {
 	data := DataResult{true, "ok", nil, nil, ""}
 	if readJson(r, "data", &server) {
 
-		_, err = dh.ServerRepo.Save(server.Id, &server)
+		err = dc.DataService.SaveServer(&server)
 
 		if err != nil {
 			data.Success = false
@@ -73,7 +63,7 @@ func (dh DataHandler) saveServer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func (dh DataHandler) deleteServer(w http.ResponseWriter, r *http.Request) {
+func (dc DataController) deleteServer(w http.ResponseWriter, r *http.Request) {
 	var (
 		server domain.Server
 		err    error
@@ -81,7 +71,7 @@ func (dh DataHandler) deleteServer(w http.ResponseWriter, r *http.Request) {
 	data := DataResult{true, "ok", nil, nil, ""}
 
 	if readJson(r, "data", &server) {
-		err = dh.ServerRepo.Remove(server.Id)
+		err = dc.DataService.DeleteServer(&server)
 
 		if err != nil {
 			log.Printf("%v", err)
@@ -93,52 +83,51 @@ func (dh DataHandler) deleteServer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func (dh DataHandler) loadServers(w http.ResponseWriter, r *http.Request) {
-	var results []domain.Server
-	dh.ServerRepo.All(&results)
+func (dc DataController) loadServers(w http.ResponseWriter, r *http.Request) {
+	results, _ := dc.DataService.FindAllServers()
 
 	data := DataResult{true, "ok", results, nil, ""}
 	json.NewEncoder(w).Encode(data)
 }
 
-func (dh DataHandler) loadSettings(w http.ResponseWriter, r *http.Request) {
-	var settings domain.XtvSettings
-	dh.SettingsRepo.FindFirst(&settings)
+func (dc DataController) loadSettings(w http.ResponseWriter, r *http.Request) {
+	settings := dc.GetSettings ()
 
-	data := DataResult{true, "ok", nil, &settings, ""}
+	data := DataResult{true, "ok", nil, settings, ""}
 	json.NewEncoder(w).Encode(data)
 }
 
-func (dh DataHandler) saveSettings(w http.ResponseWriter, r *http.Request) {
+func (dc DataController) saveSettings(w http.ResponseWriter, r *http.Request) {
 	var settings domain.XtvSettings
 	var err error
 	data := DataResult{true, "ok", nil, nil, ""}
 
 	if readJson(r, "data", &settings) {
-		_, err = dh.SettingsRepo.Save(settings.Id, &settings)
+		_, err = dc.DataService.SettingsRepo.Save(settings.Id, &settings)
 
 		if err != nil {
 			log.Printf("%v", err)
 			data.Success = false
 			data.Status = "error"
 		}
-		log.Printf("update settings: %v", settings)
-		dh.DccService.UpdateSettings(&settings)
 	}
+
+	//update DownloadLimit
+	dc.DccService.SetDownloadLimit(settings.MaxDownStream)
 
 	json.NewEncoder(w).Encode(data)
 }
 
-func (dh DataHandler) loadLogFile(w http.ResponseWriter, r *http.Request) {
-	settings := dh.DccService.GetSettings()
+func (dc DataController) loadLogFile(w http.ResponseWriter, r *http.Request) {
+	settings := dc.GetSettings()
 	buf, _ := ioutil.ReadFile(settings.LogFile)
 
 	data := DataResult{true, "ok", nil, nil, string(buf)}
 	json.NewEncoder(w).Encode(data)
 }
 
-func (dh DataHandler) clearLogFile(w http.ResponseWriter, r *http.Request) {
-	settings := dh.DccService.GetSettings()
+func (dc DataController) clearLogFile(w http.ResponseWriter, r *http.Request) {
+	settings := dc.GetSettings()
 	ioutil.WriteFile(settings.LogFile, []byte(""), 0644)
 
 	data := DataResult{true, "ok", nil, nil, ""}
