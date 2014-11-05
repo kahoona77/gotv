@@ -46,7 +46,7 @@ window.ripples = {
                 mousePos            = {x: e.clientX - elPos.left, y: ((window.ontouchstart) ? e.clientY - window.scrollY: e.clientY) - elPos.top},
                 scale               = "scale(" + Math.round($rippleWrapper.offsetWidth / 5) + ")",
                 rippleEnd           = new CustomEvent("rippleEnd", {detail: $ripple}),
-                _rippleOpacity      = 0.1,
+                _rippleOpacity      = 0.3,
                 refreshElementStyle;
 
 
@@ -54,8 +54,6 @@ window.ripples = {
             if (e.touches) {
                 mousePos  = {x: e.touches[0].clientX - elPos.left, y:  e.touches[0].clientY - elPos.top};
             }
-
-            console.log(mousePos);
 
             $ripplecache = $ripple;
 
@@ -125,7 +123,7 @@ window.ripples = {
         bind(["mousedown", "touchstart"], "*", function() {
             mouseDown = true;
         });
-        bind(["mouseup", "touchend"], "*", function() {
+        bind(["mouseup", "touchend", "mouseout"], "*", function() {
             mouseDown = false;
         });
 
@@ -170,7 +168,7 @@ window.ripples = {
         });
 
         // Destroy ripple when mouse is not holded anymore if the ripple still exists
-        bind(["mouseup", "touchend"], ".ripple-wrapper", function() {
+        bind(["mouseup", "touchend", "mouseout"], ".ripple-wrapper", function() {
             var $ripple = $ripplecache;
             if ($ripple && $ripple.dataset.animating != 1) {
                 rippleOut($ripple);
