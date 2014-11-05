@@ -11,11 +11,11 @@ import (
 
 type IrcBot struct {
 	*Context
-	Server      *domain.Server
-	Conn        *irc.Conn
-	ConsoleLog  []string
-	Regex       *regexp.Regexp
-	LogCount    int
+	Server     *domain.Server
+	Conn       *irc.Conn
+	ConsoleLog []string
+	Regex      *regexp.Regexp
+	LogCount   int
 }
 
 func NewIrcBot(ctx *Context, server *domain.Server) *IrcBot {
@@ -56,10 +56,12 @@ func (ib *IrcBot) Connect() {
 
 	ib.Conn.HandleFunc("372", ib.log372)
 
+	ib.Conn.HandleFunc("DISCONNECTED", ib.reconnect)
+
 	ib.Conn.HandleFunc("CTCP", ib.DccService.handleDCC)
 
 	// Tell client to connect.
-	log.Print("connecting")
+	log.Printf("Connecting to '%v'", ib.Server.Name)
 	if err := ib.Conn.Connect(); err != nil {
 		log.Printf("Connection error: %v\n", err)
 		ib.logToConsole("Connection error: " + err.Error())
@@ -71,16 +73,17 @@ func (ib *IrcBot) Disconnect() {
 	//ib.Conn.shutdown()
 }
 
+func (ib *IrcBot) reconnect(conn *irc.Conn, line *irc.Line) {
+	log.Printf("Discconected from '%v'. Reconnecting now ...", ib.Server.Name)
+	ib.Connect()
+}
+
 func (ib *IrcBot) log372(conn *irc.Conn, line *irc.Line) {
 	ib.logToConsole(line.Text())
 }
 
 func (ib *IrcBot) parseMessage(conn *irc.Conn, line *irc.Line) {
-	packet := ib.parsePacket(conn, line)
-	if packet == nil {
-		// log message
-		ib.logToConsole(line.Text())
-	}
+	ib.parsePacket(conn, line)
 }
 
 func (ib *IrcBot) parsePacket(conn *irc.Conn, line *irc.Line) *domain.Packet {
@@ -93,7 +96,9 @@ func (ib *IrcBot) parsePacket(conn *irc.Conn, line *irc.Line) *domain.Packet {
 	packet := domain.NewPacket(result[1], result[2], fileName, line.Nick, line.Target(), ib.Server.Name, line.Time)
 
 	//save packet
-	ib.PacketsRepo.Save(packet.Id, packet)
+	if packet != nil {
+		ib.PacketsRepo.Save(packet.Id, packet)
+	}
 
 	return packet
 }
