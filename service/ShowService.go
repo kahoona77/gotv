@@ -108,9 +108,11 @@ func sanitizeFilename(filename string) string {
 
 func (showService *ShowService) parseShow(absoluteFile string) *ShowInfo {
 	info := new(ShowInfo)
-
 	// cut off the path
 	file := absoluteFile[strings.LastIndex(absoluteFile, "/")+1:]
+
+	// Replace all _ with dots
+	file = strings.Replace(file, "_", ".", -1)
 
 	result := showService.seRegex.FindStringSubmatch(file)
 	if result != nil {

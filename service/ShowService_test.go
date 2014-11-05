@@ -11,6 +11,9 @@ func TestParseShow(t *testing.T) {
 
 	info = parser.parseShow("d:/test/downloads/Breaking.Bad.5x15.HDTV.x264.mkv")
 	checkInfo(info, t)
+
+	info = parser.parseShow("d:/test/downloads/Breaking_Bad.5x15.HDTV_x264.mkv")
+	checkInfo(info, t)
 }
 
 func checkInfo(info *ShowInfo, t *testing.T) {
@@ -33,10 +36,10 @@ func checkInfo(info *ShowInfo, t *testing.T) {
 }
 
 func TestCleanFileName(t *testing.T) {
-	filename := "Modern Family - 5x05 - Test: This is a test.mkv"
+	filename := "'Modern Family - 6x06 - Halloween 3:  AwesomeLand.mkv"
 	result := sanitizeFilename(filename)
 
-	if result != "Modern Family - 5x05 - Test This is a test.mkv" {
+	if result != "'Modern Family - 6x06 - Halloween 3  AwesomeLand.mkv" {
 		t.Errorf("file not cleaned '%v'", result)
 	}
 }
