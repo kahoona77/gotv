@@ -31,3 +31,12 @@ func checkInfo(info *ShowInfo, t *testing.T) {
 		t.Errorf("wrong Episode: %v", info.Episode)
 	}
 }
+
+func TestCleanFileName(t *testing.T) {
+	filename := "Modern Family - 5x05 - Test: This is a test.mkv"
+	result := sanitizeFilename(filename)
+
+	if result != "Modern Family - 5x05 - Test This is a test.mkv" {
+		t.Errorf("file not cleaned '%v'", result)
+	}
+}
