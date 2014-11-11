@@ -38,7 +38,7 @@ func NewShowService(ctx *Context) *ShowService {
 }
 
 // MoveEpisode moves the epsiode to its season folder
-func (showService *ShowService) MoveEpisode(file string, settings *domain.XtvSettings) {
+func (showService *ShowService) MoveEpisode(file string, settings *domain.XtvSettings, updateKodi bool) {
 	info := showService.parseShow(file)
 
 	if info != nil {
@@ -64,6 +64,10 @@ func (showService *ShowService) MoveEpisode(file string, settings *domain.XtvSet
 		}
 
 		log.Printf("Moved Episode '%s' to folder '%s'", fileName, destinationFolder)
+	}
+
+	if updateKodi == true {
+		UpdateKodi(settings)
 	}
 }
 
@@ -138,7 +142,7 @@ func (showService *ShowService) UpdateEpisodes(settings *domain.XtvSettings) {
 	// iterate over files in downlod-Dir
 	err := filepath.Walk(settings.DownloadDir, func(file string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
-			showService.MoveEpisode(file, settings)
+			showService.MoveEpisode(file, settings, false)
 		}
 		return nil
 	})
@@ -212,6 +216,8 @@ func (showService *ShowService) LoadEpisodes(showID string) map[string][]*domain
 func showFromSeries(series *tvdb.Series) domain.Show {
 	show := domain.Show{}
 	show.Name = series.SeriesName
+	show.SearchName = series.SeriesName
+	show.Folder = series.SeriesName
 	show.Id = strconv.Itoa(int(series.ID))
 	show.Banner = series.Banner
 	show.FirstAired = series.FirstAired

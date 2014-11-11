@@ -108,7 +108,7 @@ func (dcc *DccService) completeDownload(file string) {
 		}
 
 		//start smart episode matching
-		dcc.ShowService.MoveEpisode (absoluteFile, settings)
+		dcc.ShowService.MoveEpisode(absoluteFile, settings, true)
 
 	} else {
 		log.Printf("download not found: %v in %v", file, dcc.downloads)
