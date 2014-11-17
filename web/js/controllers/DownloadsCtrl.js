@@ -3,7 +3,7 @@
 /* Controllers */
 
 angular.module('xtv.controllers').
-  controller('DownloadsCtrl', ['$scope', '$timeout', '$http', function($scope, $timeout, $http) {
+  controller('DownloadsCtrl', ['$scope', '$timeout', '$http', 'msg', function($scope, $timeout, $http, msg) {
 
     $scope.downloads = [];
 
@@ -11,6 +11,14 @@ angular.module('xtv.controllers').
         $http.get('downloads/listDownloads',{params: { 'nocache': new Date().getTime() }}).success(function(response){
             if (response.status == 'ok') {
                 $scope.downloads = response.downloads;
+                //reslect the download
+                if ($scope.selectedDownload) {
+                  angular.forEach ($scope.downloads, function (item) {
+                     if (item.file == $scope.selectedDownload.file) {
+                       $scope.selectedDownload = item;
+                     }
+                  });
+                }
             } else {
                 msg.error (response.message);
             }
@@ -32,14 +40,14 @@ angular.module('xtv.controllers').
       }
     });
 
-    $scope.selectItem = function (item) {
-      $scope.selectedItem = item;
+    $scope.selectDownload = function (item) {
+      $scope.selectedDownload = item;
     };
 
-    $scope.stop = function () {
-        $http.post('downloads/stopDownload', {data: $scope.selectedItem}).success(function(response){
+    $scope.stopDownload = function () {
+        $http.post('downloads/stopDownload', {data: $scope.selectedDownload}).success(function(response){
             if (response.status == 'ok') {
-                $scope.selectedItem = undefined;
+                $scope.selectedDownload = undefined;
                 $scope.loadDownloads();
             } else {
                 msg.error (response.message);
@@ -47,10 +55,10 @@ angular.module('xtv.controllers').
         });
     };
 
-    $scope.resume = function () {
-        $http.post('downloads/resumeDownload', {data: $scope.selectedItem}).success(function(response){
+    $scope.resumeDownload = function () {
+        $http.post('downloads/resumeDownload', {data: $scope.selectedDownload}).success(function(response){
             if (response.status == 'ok') {
-                $scope.selectedItem = undefined;
+                $scope.selectedDownload = undefined;
                 $scope.loadDownloads();
             } else {
                 msg.error (response.message);
@@ -59,13 +67,13 @@ angular.module('xtv.controllers').
     };
 
     $scope.showCancelConfirm = function () {
-      $('#confirmDialog').modal ('show');
+      $('#downloadDeleteConfirmDialog').modal ('show');
     };
 
-    $scope.cancel = function () {
-        $http.post('downloads/cancelDownload', {data: $scope.selectedItem}).success(function(response){
+    $scope.cancelDownload = function () {
+        $http.post('downloads/cancelDownload', {data: $scope.selectedDownload}).success(function(response){
             if (response.status == 'ok') {
-                $scope.selectedItem = undefined;
+                $scope.selectedDownload = undefined;
                 $scope.loadDownloads();
             } else {
                 msg.error (response.message);
@@ -73,7 +81,7 @@ angular.module('xtv.controllers').
         });
     };
 
-    $scope.clear = function () {
+    $scope.clearDownloads = function () {
       var completed = [];
       angular.forEach ($scope.downloads, function (item) {
          if (item.status == 'COMPLETE') {
@@ -84,7 +92,7 @@ angular.module('xtv.controllers').
       angular.forEach (completed, function (item) {
          $http.post('downloads/cancelDownload', {data: item}).success(function(response){
               if (response.status == 'ok') {
-                  $scope.selectedItem = undefined;
+                  $scope.selectedDownload = undefined;
                   $scope.loadDownloads();
               } else {
                   msg.error (response.message);
@@ -110,4 +118,76 @@ angular.module('xtv.controllers').
 
       return min + ":" + sec + " Minutes";
     };
+
+
+    //Files
+    $scope.files = [];
+
+    $scope.loadFiles = function () {
+        $http.get('downloads/loadFiles').success(function(response){
+            if (response.status == 'ok') {
+                $scope.files = response.files;
+            } else {
+                msg.error (response.message);
+            }
+        });
+    };
+    $scope.loadFiles();
+
+    $scope.selectedFiles = [];
+    $scope.selectFile = function (file) {
+      if ($scope.isSelected(file)) {
+        $scope.selectedFiles = _.without ($scope.selectedFiles, file);
+      } else {
+        $scope.selectedFiles.push(file);
+      }
+    };
+
+    $scope.isSelected = function (file) {
+      return _.contains ($scope.selectedFiles, file);
+    };
+
+    $scope.updateEpisodes = function () {
+     $http.get('/shows/updateEpisodes').success(function(response){
+        if (response.status == 'ok') {
+          msg.show ("Updating episodes started...");
+        } else {
+          msg.error (response.message);
+        }
+      });
+    };
+
+
+    $scope.showFileDelteConfirm = function () {
+      $('#fileDeteConfirmDialog').modal ('show');
+    };
+
+    $scope.deleteSelectedFiles = function () {
+        $http.post('downloads/deleteFiles', {data: $scope.selectedFiles}).success(function(response){
+            if (response.status == 'ok') {
+                msg.show ("All files deleted!");
+                $scope.selectedFiles = [];
+                $scope.loadFiles();
+            } else {
+                msg.error (response.status);
+            }
+        });
+    };
+
+    $scope.showMoveFilesConfirm = function () {
+      $('#moveFilesConfirmDialog').modal ('show');
+    };
+
+    $scope.moveFilesToMovies = function () {
+        $http.post('downloads/moveFilesToMovies', {data: $scope.selectedFiles}).success(function(response){
+            if (response.status == 'ok') {
+                msg.show ("All files moved!");
+                $scope.selectedFiles = [];
+                $scope.loadFiles();
+            } else {
+                msg.error (response.status);
+            }
+        });
+    };
+
   }]);

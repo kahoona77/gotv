@@ -1,0 +1,27 @@
+2014/11/17 14:28:32 XTV (Go) started port 8080
+2014/11/17 15:15:01 XTV (Go) started port 8080
+2014/11/17 15:19:32 XTV (Go) started port 8080
+2014/11/17 15:21:50 currentDownloadLimit: 204800
+2014/11/17 15:30:21 XTV (Go) started port 8080
+2014/11/17 15:31:29 Error while connecting to Kodi: dial tcp 192.168.66.11:9000: ConnectEx tcp: Ein Verbindungsversuch ist fehlgeschlagen, da die Gegenstelle nach einer bestimmten Zeitspanne nicht richtig reagiert hat, oder die hergestellte Verbindung war fehlerhaft, da der verbundene Host nicht reagiert hat.
+2014/11/17 15:31:50 Error while connecting to Kodi: dial tcp 192.168.66.11:9000: ConnectEx tcp: Ein Verbindungsversuch ist fehlgeschlagen, da die Gegenstelle nach einer bestimmten Zeitspanne nicht richtig reagiert hat, oder die hergestellte Verbindung war fehlerhaft, da der verbundene Host nicht reagiert hat.
+2014/11/17 15:32:03 ERROR: rename C:\Users\Benjamin.Ernst\Downloads\OracleXE112_Win64 C:\Temp\OracleXE112_Win64: Das System kann die angegebene Datei nicht finden.
+2014/11/17 15:35:29 Connecting to 'irc.abjects.net'
+2014/11/17 15:35:35 removed 0 old packets
+2014/11/17 15:35:58 received SEND - file: American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv, addr: 176.31.129.49, port: 60467, size:606872597
+2014/11/17 15:36:37 Download completed 'American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv'
+2014/11/17 15:36:37 Error while moving file to destination: rename c:\Temp\American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv C:\Users\Benjamin.Ernst\Downloads\American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv: Der Prozess kann nicht auf die Datei zugreifen, da sie von einem anderen Prozess verwendet wird.
+2014/11/17 15:36:37 could not find show: American Dad
+2014/11/17 15:37:10 removed 0 old packets
+2014/11/17 15:37:18 received SEND - file: American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv, addr: 176.31.129.49, port: 52189, size:606872597
+2014/11/17 15:37:18 sending resume [American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv 52189 18055012]
+2014/11/17 15:37:19 received ACCEPT
+2014/11/17 15:38:24 Read error: WSARecv tcp 192.168.66.102:56843: Eine vorhandene Verbindung wurde vom Remotehost geschlossen.
+2014/11/17 15:38:24 Download failed 'American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv'
+2014/11/17 15:38:29 received SEND - file: American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv, addr: 176.31.129.49, port: 43530, size:606872597
+2014/11/17 15:38:29 sending resume [American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv 43530 46645868]
+2014/11/17 15:38:30 received ACCEPT
+2014/11/17 15:38:56 Read error: WSARecv tcp 192.168.66.102:56846: Eine vorhandene Verbindung wurde vom Remotehost geschlossen.
+2014/11/17 15:38:56 Download failed 'American.Dad.S08E04.American.Stepdad.GERMAN.DUBBED.DL.720p.WebHD.x264-TVP.mkv'
+2014/11/17 15:44:01 removed 0 old packets
+2014/11/17 15:44:21 removed 0 old packets

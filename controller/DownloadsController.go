@@ -2,10 +2,12 @@ package controller
 
 import (
 	"encoding/json"
-	"github.com/kahoona77/gotv/domain"
-	"github.com/kahoona77/gotv/service"
+	"log"
 	"net/http"
 	"strings"
+
+	"github.com/kahoona77/gotv/domain"
+	"github.com/kahoona77/gotv/service"
 )
 
 type DownloadsResult struct {
@@ -14,10 +16,15 @@ type DownloadsResult struct {
 	Downloads []*service.Download `json:"downloads"`
 }
 
+type FilesResult struct {
+	Success bool           `json:"success"`
+	Status  string         `json:"status"`
+	Files   []service.File `json:"files"`
+}
+
 type DownloadsController struct {
 	*service.Context
 }
-
 
 func (dc DownloadsController) HandleRequests(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.String()
@@ -33,6 +40,12 @@ func (dc DownloadsController) HandleRequests(w http.ResponseWriter, r *http.Requ
 		dc.resumeDownload(w, r)
 	case url == "/downloads/stopDownload":
 		dc.stopDownload(w, r)
+	case url == "/downloads/loadFiles":
+		dc.loadFiles(w, r)
+	case url == "/downloads/deleteFiles":
+		dc.deleteFiles(w, r)
+	case url == "/downloads/moveFilesToMovies":
+		dc.moveFilesToMovies(w, r)
 	}
 
 	return
@@ -85,5 +98,42 @@ func (dc DownloadsController) resumeDownload(w http.ResponseWriter, r *http.Requ
 	}
 
 	data := DownloadsResult{true, "ok", nil}
+	json.NewEncoder(w).Encode(data)
+}
+
+func (dc DownloadsController) loadFiles(w http.ResponseWriter, r *http.Request) {
+
+	files := dc.FilesService.GetFiles()
+	data := FilesResult{true, "ok", files}
+	json.NewEncoder(w).Encode(data)
+}
+
+func (dc DownloadsController) deleteFiles(w http.ResponseWriter, r *http.Request) {
+	var files []service.File
+	data := FilesResult{true, "ok", nil}
+	if readJson(r, "data", &files) {
+		err := dc.FilesService.DeleteFiles(files)
+		if err != nil {
+			log.Printf("ERROR: %v", err)
+			data.Success = false
+			data.Status = "Error while deleting files: " + err.Error()
+		}
+	}
+
+	json.NewEncoder(w).Encode(data)
+}
+
+func (dc DownloadsController) moveFilesToMovies(w http.ResponseWriter, r *http.Request) {
+	var files []service.File
+	data := FilesResult{true, "ok", nil}
+	if readJson(r, "data", &files) {
+		err := dc.FilesService.MoveFilesToMovies(files)
+		if err != nil {
+			log.Printf("ERROR: %v", err)
+			data.Success = false
+			data.Status = "Error while moving files: " + err.Error()
+		}
+	}
+
 	json.NewEncoder(w).Encode(data)
 }
