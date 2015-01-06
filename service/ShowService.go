@@ -2,9 +2,6 @@ package service
 
 import (
 	"fmt"
-	tvdb "github.com/garfunkel/go-tvdb"
-	"github.com/kahoona77/gotv/domain"
-	"labix.org/v2/mgo/bson"
 	"log"
 	"net"
 	"os"
@@ -12,6 +9,10 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	tvdb "github.com/garfunkel/go-tvdb"
+	"github.com/kahoona77/gotv/domain"
+	"labix.org/v2/mgo/bson"
 )
 
 // ShowInfo Info about a show
@@ -52,7 +53,7 @@ func (showService *ShowService) MoveEpisode(file string, settings *domain.XtvSet
 		// create output file
 		fileEnding := file[strings.LastIndex(file, "."):]
 		destinationFolder := settings.ShowsFolder + "/" + show.Folder + "/Season " + strconv.Itoa(int(episode.SeasonNumber)) + "/"
-		fileName := show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + fmt.Sprintf("%0.2d", episode.EpisodeNumber) + " - " + episode.Name
+		fileName := sanitizeFilename(show.Name + " - " + strconv.Itoa(int(episode.SeasonNumber)) + "x" + fmt.Sprintf("%0.2d", episode.EpisodeNumber) + " - " + episode.Name)
 
 		//move epsiode to destination
 		srcFile := filepath.FromSlash(file)
@@ -138,6 +139,7 @@ func (showService *ShowService) parseShow(absoluteFile string) *ShowInfo {
 	return info
 }
 
+// UpdateEpisodes tries to move episodes from the download-folder
 func (showService *ShowService) UpdateEpisodes(settings *domain.XtvSettings) {
 	// iterate over files in downlod-Dir
 	err := filepath.Walk(settings.DownloadDir, func(file string, info os.FileInfo, err error) error {
@@ -153,6 +155,7 @@ func (showService *ShowService) UpdateEpisodes(settings *domain.XtvSettings) {
 	UpdateKodi(settings)
 }
 
+// UpdateKodi sned a request to Kodi to update its database
 func UpdateKodi(settings *domain.XtvSettings) {
 	//connect
 	conn, err := net.Dial("tcp", settings.KodiAddress)

@@ -137,7 +137,7 @@
                 <h4 class="modal-title" id="episodesDialogLabel"><span class="glyphicon glyphicon-cog"></span> Episodes for {{selectedShow.name}}</h4>
             </div>
             <div class="modal-body" style="max-height: 500px; overflow-y: scroll">
-              <div ng-repeat="(season, episodes) in seasons">
+              <div ng-repeat="(season, episodes) in seasons | orderBy:'seasonNumber':true">
                 <table class="table" >
                     <tr ng-repeat="episode in episodes">
                         <td>{{episode.episodeName}}</td>
