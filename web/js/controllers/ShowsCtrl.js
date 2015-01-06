@@ -95,7 +95,7 @@ angular.module('xtv.controllers').
       var number = "" + episode.episodeNumber;
       number =  pad.substring(0, pad.length - number.length) + number;
 
-      var query = show.name + " S" +  season + "E" + number;
+      var query = show.searchName + " S" +  season + "E" + number;
       $location.path ('/search/' + query);
     };
 
