@@ -79,7 +79,11 @@ angular.module('xtv.controllers').
     $scope.loadEpisodes = function (show) {
      $http.get('/shows/loadEpisodes', {params : {showId: show.id}}).success(function(response){
         if (response.status == 'ok') {
-          $scope.seasons = response.episodes;
+          var result = [];
+          angular.forEach(response.episodes, function(value, key) {
+            this.push({seasonNumber: key, episodes: value});
+          }, result);
+          $scope.seasons = result;
           $('#episodesDialog').modal ('show');
         } else {
           msg.error (response.message);
@@ -108,7 +112,5 @@ angular.module('xtv.controllers').
         }
       });
     };
-
-
 
   }]);
