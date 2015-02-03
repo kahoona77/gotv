@@ -44,6 +44,10 @@ a {
   height: 25px;
 }
 
+.xtv-shows-container {
+  max-height: 600px;
+  overflow-y: scroll;
+}
 
 
 .xtv-progress {

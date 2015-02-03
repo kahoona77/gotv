@@ -16,7 +16,7 @@ func CreateMongoService() *MongoService {
 	ms := new(MongoService)
 
 	//creating db
-	session, err := mgo.Dial("192.168.56.101") //mgo.Dial("localhost")
+	session, err := mgo.Dial("localhost") //mgo.Dial("192.168.56.101") //mgo.Dial("localhost")
 	if err != nil {
 		panic(err)
 	}

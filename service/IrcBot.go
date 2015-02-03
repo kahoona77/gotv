@@ -35,6 +35,9 @@ func (ib *IrcBot) IsConnected() bool {
 }
 
 func (ib *IrcBot) Connect() {
+	//reset log
+	ib.ConsoleLog = make([]string, 0)
+
 	// create a config and fiddle with it first:
 	cfg := irc.NewConfig(ib.GetSettings().Nick)
 	cfg.Server = ib.Server.Name + ":" + strconv.Itoa(ib.Server.Port)
