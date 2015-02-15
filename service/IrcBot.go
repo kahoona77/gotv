@@ -1,12 +1,14 @@
 package service
 
 import (
-	irc "github.com/fluffle/goirc/client"
-	"github.com/kahoona77/gotv/domain"
 	"log"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
+
+	irc "github.com/fluffle/goirc/client"
+	"github.com/kahoona77/gotv/domain"
 )
 
 type IrcBot struct {
@@ -38,37 +40,45 @@ func (ib *IrcBot) Connect() {
 	//reset log
 	ib.ConsoleLog = make([]string, 0)
 
-	// create a config and fiddle with it first:
-	cfg := irc.NewConfig(ib.GetSettings().Nick)
-	cfg.Server = ib.Server.Name + ":" + strconv.Itoa(ib.Server.Port)
-	ib.Conn = irc.Client(cfg)
+	//Lok up ips
+	ips, _ := net.LookupIP("irc.abjects.net")
+	for _, ip := range ips {
+		log.Printf("Connecting to '%v' at '%v'", ib.Server.Name, ip)
 
-	// Join channels
-	ib.Conn.HandleFunc("connected",
-		func(conn *irc.Conn, line *irc.Line) {
-			ib.logToConsole("connected to " + ib.Server.Name + ":" + strconv.Itoa(ib.Server.Port))
+		// create a config and fiddle with it first:
+		cfg := irc.NewConfig(ib.GetSettings().Nick)
+		cfg.Server = ip.String() + ":" + strconv.Itoa(ib.Server.Port)
+		ib.Conn = irc.Client(cfg)
 
-			for _, channel := range ib.Server.Channels {
-				ib.logToConsole("joining channel " + channel.Name)
-				conn.Join(channel.Name)
-			}
-		})
+		// Join channels
+		ib.Conn.HandleFunc("connected",
+			func(conn *irc.Conn, line *irc.Line) {
+				ib.logToConsole("connected to " + ib.Server.Name + ":" + strconv.Itoa(ib.Server.Port))
 
-	// Parse Messages
-	ib.Conn.HandleFunc("PRIVMSG", ib.parseMessage)
+				for _, channel := range ib.Server.Channels {
+					ib.logToConsole("joining channel " + channel.Name)
+					conn.Join(channel.Name)
+				}
+			})
 
-	ib.Conn.HandleFunc("372", ib.log372)
+		// Parse Messages
+		ib.Conn.HandleFunc("PRIVMSG", ib.parseMessage)
 
-	ib.Conn.HandleFunc("DISCONNECTED", ib.reconnect)
+		ib.Conn.HandleFunc("372", ib.log372)
 
-	ib.Conn.HandleFunc("CTCP", ib.DccService.handleDCC)
+		ib.Conn.HandleFunc("DISCONNECTED", ib.reconnect)
 
-	// Tell client to connect.
-	log.Printf("Connecting to '%v'", ib.Server.Name)
-	if err := ib.Conn.Connect(); err != nil {
-		log.Printf("Connection error: %v\n", err)
-		ib.logToConsole("Connection error: " + err.Error())
+		ib.Conn.HandleFunc("CTCP", ib.DccService.handleDCC)
+
+		// Tell client to connect.
+		if err := ib.Conn.Connect(); err != nil {
+			log.Printf("Connection error: %v\n", err)
+			ib.logToConsole("Connection error: " + err.Error())
+		} else {
+			break
+		}
 	}
+
 }
 
 func (ib *IrcBot) Disconnect() {

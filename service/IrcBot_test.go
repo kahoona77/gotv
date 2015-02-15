@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+	"net"
 	"testing"
 )
 
@@ -20,9 +22,17 @@ func TestMakeOutBuffer(t *testing.T) {
 
 func TestCleanFilename(t *testing.T) {
 	filename := "☻Beckoning.The.Butcher.2013.DVDRiP.X264-TASTE.mkv☼"
-	result := cleanFileName (filename)
+	result := cleanFileName(filename)
 
 	if result != "Beckoning.The.Butcher.2013.DVDRiP.X264-TASTE.mkv" {
 		t.Error("wrong filename: " + result)
+	}
+}
+
+func TestLookup(t *testing.T) {
+	ips, _ := net.LookupIP("irc.abjects.net")
+
+	for _, ip := range ips {
+		fmt.Printf("ip: %v; ", ip)
 	}
 }
