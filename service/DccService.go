@@ -3,9 +3,6 @@ package service
 import (
 	"bufio"
 	"encoding/binary"
-	"github.com/efarrer/iothrottler"
-	irc "github.com/fluffle/goirc/client"
-	"github.com/kahoona77/gotv/domain"
 	"io"
 	"log"
 	"net"
@@ -13,6 +10,11 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
+
+	irc "github.com/fluffle/goirc/client"
+	"github.com/juju/ratelimit"
+	"github.com/kahoona77/gotv/domain"
 )
 
 // DccFileEvent -
@@ -37,7 +39,7 @@ type DccService struct {
 	downloads  map[string]*Download
 	resumes    map[string]*DccFileEvent
 	updateChan chan DccUpdate
-	connPool   *iothrottler.IOThrottlerPool
+	bucket     *ratelimit.Bucket
 }
 
 // NewDccService creates a new DccService
@@ -47,7 +49,7 @@ func NewDccService(ctx *Context) *DccService {
 	dcc.downloads = make(map[string]*Download)
 	dcc.resumes = make(map[string]*DccFileEvent)
 	dcc.updateChan = make(chan DccUpdate)
-	dcc.connPool = iothrottler.NewIOThrottlerPool(iothrottler.Unlimited)
+	dcc.SetDownloadLimit(0)
 
 	//start download update
 	go dcc.updateDownloads()
@@ -57,7 +59,7 @@ func NewDccService(ctx *Context) *DccService {
 func (dcc *DccService) handleDCC(conn *irc.Conn, line *irc.Line) {
 	request := strings.Split(line.Args[2], " ")
 	ctcpType := line.Args[0]
-	settings := dcc.GetSettings ()
+	settings := dcc.GetSettings()
 	if ctcpType == "DCC" {
 		cmd := request[0]
 		if cmd == "SEND" {
@@ -137,19 +139,14 @@ func (dcc *DccService) startDownload(fileEvent *DccFileEvent, startPos int64, se
 	}()
 
 	//connect
-	tcpConn, err := net.Dial("tcp", fileEvent.IP.String()+":"+fileEvent.Port)
+	conn, err := net.Dial("tcp", fileEvent.IP.String()+":"+fileEvent.Port)
 	if err != nil {
 		log.Printf("Connect error: %v", err)
 		return
 	}
 
-	//add to throttled pool
-	conn, err := dcc.connPool.AddConn(tcpConn)
-	if err != nil {
-		log.Printf("Error while adding to connection pool: %s", err)
-		tcpConn.Close()
-		return
-	}
+	//set rateLimit
+	var reader = ratelimit.Reader(conn, dcc.bucket)
 
 	var complete bool
 	var inBuf = make([]byte, 1024)
@@ -158,7 +155,8 @@ func (dcc *DccService) startDownload(fileEvent *DccFileEvent, startPos int64, se
 	//read-loop
 	for {
 		//read a chunk
-		n, err := conn.Read(inBuf)
+		n, err := reader.Read(inBuf)
+		// fmt.Printf("read: %d\n", n)
 		if err != nil {
 			if err == io.EOF {
 				complete = true
@@ -189,8 +187,13 @@ func (dcc *DccService) startDownload(fileEvent *DccFileEvent, startPos int64, se
 		}
 
 		counter++
-		if counter == 500 {
+		//every 100kb update
+		if counter == 100 {
 			dcc.updateChan <- DccUpdate{fileEvent.FileName, totalBytes, fileEvent.Size}
+
+			//reset rateLimit
+			reader = ratelimit.Reader(conn, dcc.bucket)
+
 			counter = 0
 		}
 	}
@@ -213,13 +216,14 @@ func (dcc *DccService) getTempFile(fileEvent *DccFileEvent, settings *domain.Xtv
 			log.Printf("File create error: %s", err)
 		}
 		return fo
-	} else {
-		fo, err := os.OpenFile(filename, os.O_WRONLY, 0777)
-		if err != nil {
-			log.Printf("File open error: %s", err)
-		}
-		return fo
 	}
+
+	fo, err := os.OpenFile(filename, os.O_WRONLY, 0777)
+	if err != nil {
+		log.Printf("File open error: %s", err)
+	}
+	return fo
+
 }
 
 func (dcc *DccService) fileExists(fileEvent *DccFileEvent, settings *domain.XtvSettings) (bool, int64) {
@@ -248,14 +252,15 @@ func inetNtoa(ipnr int64) net.IP {
 	return net.IPv4(bytes[3], bytes[2], bytes[1], bytes[0])
 }
 
-
 // SetDownloadLimit - Sets the downloadlimit in KiloByte / Second
-func (dcc *DccService) SetDownloadLimit(maxDownStream int) {
-	if maxDownStream <= 0 {
-		dcc.connPool.SetBandwidth(iothrottler.Unlimited)
+func (dcc *DccService) SetDownloadLimit(kBs int) {
+	if kBs <= 0 {
+		dcc.bucket = ratelimit.NewBucketWithQuantum(100*time.Millisecond, 1024*1000000, 100000000000)
+		// dcc.connPool.SetBandwidth(iothrottler.Unlimited)
 		log.Printf("download unlimited")
 	} else {
-		dcc.connPool.SetBandwidth(iothrottler.Kbps * iothrottler.Bandwidth(maxDownStream*8))
-		log.Printf("currentDownloadLimit: %v", iothrottler.Kbps*iothrottler.Bandwidth(maxDownStream*8))
+		// dcc.connPool.SetBandwidth(iothrottler.Kbps * iothrottler.Bandwidth(kBs*8))
+		dcc.bucket = ratelimit.NewBucketWithQuantum(10*time.Millisecond, int64(1000*kBs), int64(1000*(kBs/100)))
+		log.Printf("currentDownloadLimit: %v kB/s", kBs)
 	}
 }
